@@ -6,8 +6,11 @@
 #include <stdint.h>
 
 Tree::Tree(std::vector<std::pair<int, int> > _edge_list) {
-    const int n = static_cast<int>(_edge_list.size()) + 1;
-    adj_list = std::vector(n, std::vector<int>());
+    if (_edge_list.empty()) {
+        throw std::runtime_error("The edge list is empty");
+    }
+
+    adj_list = std::vector(_edge_list.size() + 1, std::vector<int>());
     for (auto edge : _edge_list) {
         adj_list[edge.first].push_back(edge.second);
         adj_list[edge.second].push_back(edge.first);
@@ -24,6 +27,10 @@ Tree::Tree() {
 }
 
 void Tree::AddEdge(int node1, int node2) {
+    if ((parent[node1] == node2) || (parent[node2] == node1)) {
+        return;
+    }
+
     if ((parenting_edge_index[node1] == 0) || (parenting_edge_index[node2] == 0)) {
         ++cut_size_e0;
     }
@@ -47,7 +54,9 @@ void Tree::AddEdge(int node1, int node2) {
             ++delta_cut[parenting_edge_index[node1] - 1];
         }
         int upperend_node = path_upper_end[path_indices[node1]];
-        --delta_cut[upperend_node];
+        if (parenting_edge_index[upperend_node] <= static_cast<int>(delta_cut.size()) - 1) {
+            --delta_cut[parenting_edge_index[upperend_node]];
+        }
         node1 = parent[upperend_node];
     }
 }
@@ -65,6 +74,45 @@ std::pair<std::vector<int>, int> Tree::OneRespectedMincut() {
     return {SubtreeNodes(best_edge), min_cut_size};
 }
 
+std::pair<std::vector<int>, float> Tree::OneRespectedSparsestCut() {
+    float min_value = INT32_MAX;
+    int best_edge = 0;
+    for (int i = 0; i < static_cast<int>(cut_values.size()); ++i) {
+        float this_sparsity = cut_values[i] / std::min(subtree_sizes[ordered_edges[i]],
+                                                       static_cast<int>(adj_list.size()) - subtree_sizes[ordered_edges[
+                                                           i]]);
+        if (this_sparsity < min_value) {
+            min_value = this_sparsity;
+            best_edge = ordered_edges[i];
+        }
+    }
+
+    return {SubtreeNodes(best_edge), min_value};
+}
+
+std::pair<std::vector<int>, int> Tree::OneRespectedBalancedCut(float ratio) {
+    int min_cut_size = INT32_MAX;
+    int best_edge = -1;
+    for (int i = 0; i < static_cast<int>(cut_values.size()); ++i) {
+        if ((subtree_sizes[ordered_edges[i]] < adj_list.size() * ratio) || (adj_list.size() - subtree_sizes[
+            ordered_edges[i]] < adj_list.size() * ratio)) {
+            continue;
+        }
+        float this_sparsity = cut_values[i] / std::min(subtree_sizes[i],
+                                                       static_cast<int>(adj_list.size()) - subtree_sizes[i]);
+        if (this_sparsity < min_cut_size) {
+            min_cut_size = cut_values[i];
+            best_edge = ordered_edges[i];
+        }
+    }
+
+    if (best_edge == -1) {
+        // no balanced cut
+        return {std::vector<int>(), INT32_MAX};
+    }
+    return {SubtreeNodes(best_edge), min_cut_size};
+}
+
 void Tree::InitializeTreeStructure() {
     // initialize the children, parent and depth vectors
     // parent of the root is -1
@@ -73,7 +121,7 @@ void Tree::InitializeTreeStructure() {
     parent = std::vector<int>(adj_list.size());
     children = std::vector<std::vector<int> >(adj_list.size(), std::vector<int>());
     depth = std::vector<int>(adj_list.size(), 0);
-    delta_cut = std::vector<int>(adj_list.size() - 1, 0);
+    delta_cut = std::vector<int>(adj_list.size() - 2, 0);
     cut_size_e0 = 1;
     cut_values = std::vector<int>(adj_list.size() - 1, 0);
 
@@ -168,7 +216,7 @@ void Tree::InitializePathData() {
             ordered_edges.push_back(node);
             path_indices[node] = static_cast<int>(path_lower_end.size() - 1);
             visited[node] = true;
-            while (heavy_parent[node]) {
+            while ((heavy_parent[node]) && (depth[node] >= 2)) {
                 node = parent[node];
 
                 ordered_edges.push_back(node);
@@ -187,7 +235,7 @@ void Tree::InitializePathData() {
 
 void Tree::UpdateCutValues() {
     cut_values[0] = cut_size_e0;
-    for (int i = 0; i < static_cast<int>(ordered_edges.size()) - 2; ++i) {
+    for (int i = 0; i < static_cast<int>(delta_cut.size()); ++i) {
         cut_values[i + 1] = cut_values[i] + delta_cut[i];
     }
 }

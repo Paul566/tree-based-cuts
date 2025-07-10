@@ -19,6 +19,11 @@ class Tree {
 
         std::pair<std::vector<int>, int> OneRespectedMincut();
 
+        std::pair<std::vector<int>, float> OneRespectedSparsestCut();
+
+        std::pair<std::vector<int>, int> OneRespectedBalancedCut(float ratio);
+        // minimum ratio-balanced cut, if no such cut, returns ({}, inf)
+
     private:
         std::vector<int> subtree_sizes; // subtree size of a leaf vertex is 1
         std::vector<bool> heavy_parent; // for a vertex v, heavy_parent[v] is true if (v, parent[v]) is a heavy edge
