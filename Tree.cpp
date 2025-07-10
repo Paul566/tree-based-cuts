@@ -2,9 +2,10 @@
 
 #include <queue>
 #include <stack>
+#include <stdexcept>
+#include <stdint.h>
 
-
-Tree::Tree(std::vector<std::pair<int, int>> _edge_list) {
+Tree::Tree(std::vector<std::pair<int, int> > _edge_list) {
     const int n = static_cast<int>(_edge_list.size()) + 1;
     adj_list = std::vector(n, std::vector<int>());
     for (auto edge : _edge_list) {
@@ -20,7 +21,6 @@ Tree::Tree(std::vector<std::pair<int, int>> _edge_list) {
 }
 
 Tree::Tree() {
-
 }
 
 void Tree::AddEdge(int node1, int node2) {
@@ -47,9 +47,22 @@ void Tree::AddEdge(int node1, int node2) {
             ++delta_cut[parenting_edge_index[node1] - 1];
         }
         int upperend_node = path_upper_end[path_indices[node1]];
-        -- delta_cut[upperend_node];
+        --delta_cut[upperend_node];
         node1 = parent[upperend_node];
     }
+}
+
+std::pair<std::vector<int>, int> Tree::OneRespectedMincut() {
+    int min_cut_size = INT32_MAX;
+    int best_edge = 0;
+    for (int i = 0; i < static_cast<int>(cut_values.size()); ++i) {
+        if (cut_values[i] < min_cut_size) {
+            min_cut_size = cut_values[i];
+            best_edge = ordered_edges[i];
+        }
+    }
+
+    return {SubtreeNodes(best_edge), min_cut_size};
 }
 
 void Tree::InitializeTreeStructure() {
@@ -58,13 +71,15 @@ void Tree::InitializeTreeStructure() {
 
     root = 0;
     parent = std::vector<int>(adj_list.size());
-    children = std::vector<std::vector<int>>(adj_list.size(), std::vector<int>());
+    children = std::vector<std::vector<int> >(adj_list.size(), std::vector<int>());
     depth = std::vector<int>(adj_list.size(), 0);
     delta_cut = std::vector<int>(adj_list.size() - 1, 0);
     cut_size_e0 = 1;
+    cut_values = std::vector<int>(adj_list.size() - 1, 0);
 
     std::queue<int> queue;
     std::vector<bool> visited(adj_list.size(), false);
+    int num_visited = 0;
     queue.push(root);
     visited[root] = true;
     parent[root] = -1;
@@ -72,6 +87,7 @@ void Tree::InitializeTreeStructure() {
         int node = queue.front();
         queue.pop();
         visited[node] = true;
+        ++num_visited;
         for (int neighbor : adj_list[node]) {
             if (!visited[neighbor]) {
                 queue.push(neighbor);
@@ -80,6 +96,10 @@ void Tree::InitializeTreeStructure() {
                 depth[neighbor] = depth[node] + 1;
             }
         }
+    }
+
+    if (num_visited != static_cast<int>(adj_list.size())) {
+        throw std::runtime_error("The tree must be connected");
     }
 }
 
@@ -163,4 +183,31 @@ void Tree::InitializePathData() {
     for (int i = 0; i < static_cast<int>(ordered_edges.size()); ++i) {
         parenting_edge_index[ordered_edges[i]] = i;
     }
+}
+
+void Tree::UpdateCutValues() {
+    cut_values[0] = cut_size_e0;
+    for (int i = 0; i < static_cast<int>(ordered_edges.size()) - 2; ++i) {
+        cut_values[i + 1] = cut_values[i] + delta_cut[i];
+    }
+}
+
+std::vector<int> Tree::SubtreeNodes(const int vertex) const {
+    // returns a list of vertices in the subtree, including this vertex
+
+    std::vector<int> subtree;
+    subtree.reserve(subtree_sizes[vertex]);
+
+    std::queue<int> queue;
+    queue.push(vertex);
+    while (!queue.empty()) {
+        int node = queue.front();
+        queue.pop();
+        subtree.push_back(node);
+        for (int child : children[node]) {
+            queue.push(child);
+        }
+    }
+
+    return subtree;
 }
