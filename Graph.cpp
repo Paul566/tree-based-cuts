@@ -2,10 +2,15 @@
 
 #include <algorithm>
 #include <iostream>
+#include <unordered_set>
 #include <vector>
 #include "DisjointSets.h"
 
 Graph::Graph(const std::vector<std::vector<int> > &_adj_list, const std::string &_tree_init_type, int seed) {
+    if (_adj_list.size() <= 1) {
+        throw std::runtime_error("Graph::Graph(): need at least two vertices");
+    }
+
     adj_list = _adj_list;
     tree_init_type = _tree_init_type;
     generator = std::mt19937(seed);
@@ -15,7 +20,7 @@ Graph::Graph(const std::vector<std::vector<int> > &_adj_list, const std::string 
     PrepareTree();
 }
 
-std::pair<std::vector<int>, int> Graph::OneRespectedSparsestCut() {
+std::pair<std::vector<int>, float> Graph::OneRespectedSparsestCut() {
     return tree.OneRespectedSparsestCut();
 }
 
@@ -25,6 +30,77 @@ std::pair<std::vector<int>, int> Graph::OneRespectedMincut() {
 
 std::pair<std::vector<int>, int> Graph::OneRespectedBalancedCut(float ratio) {
     return tree.OneRespectedBalancedCut(ratio);
+}
+
+std::pair<std::vector<int>, float> Graph::SlowOneRespectedSparsestCut() {
+    float min_sparsity = INT32_MAX;
+    std::vector<int> best_cut;
+
+    for (int vertex = 0; vertex < static_cast<int>(adj_list.size()); ++vertex) {
+        if (vertex == tree.root) {
+            continue;
+        }
+
+        int cut_size = SlowCutSize(tree.SubtreeNodes(vertex));
+        float part_size = static_cast<float>(tree.SubtreeNodes(vertex).size());
+        float this_sparsity = static_cast<float>(cut_size) / static_cast<float>(
+            std::min(part_size,static_cast<float>(adj_list.size()) - part_size));
+        if (this_sparsity < min_sparsity) {
+            min_sparsity = this_sparsity;
+            best_cut = tree.SubtreeNodes(vertex);
+        }
+    }
+
+    return {best_cut, min_sparsity};
+}
+
+std::pair<std::vector<int>, int> Graph::SlowOneRespectedMincut() {
+    int min_cut_size = INT32_MAX;
+    std::vector<int> best_cut;
+
+    for (int vertex = 0; vertex < static_cast<int>(adj_list.size()); ++vertex) {
+        if (vertex == tree.root) {
+            continue;
+        }
+
+        int cut_size = SlowCutSize(tree.SubtreeNodes(vertex));
+        if (cut_size < min_cut_size) {
+            min_cut_size = cut_size;
+            best_cut = tree.SubtreeNodes(vertex);
+        }
+    }
+
+    return {best_cut, min_cut_size};
+}
+
+std::pair<std::vector<int>, int> Graph::SlowOneRespectedBalancedCut(float ratio) {
+    int min_cut_size = INT32_MAX;
+    std::vector<int> best_cut;
+
+    for (int vertex = 0; vertex < static_cast<int>(adj_list.size()); ++vertex) {
+        if (vertex == tree.root) {
+            continue;
+        }
+
+        int cut_size = SlowCutSize(tree.SubtreeNodes(vertex));
+        float part_size = static_cast<float>(tree.SubtreeNodes(vertex).size());
+
+        if ((part_size < static_cast<float>(adj_list.size()) * ratio) ||
+            (static_cast<float>(adj_list.size()) - part_size < static_cast<float>(adj_list.size()) * ratio)) {
+            continue;
+            }
+
+        if (cut_size < min_cut_size) {
+            min_cut_size = cut_size;
+            best_cut = tree.SubtreeNodes(vertex);
+        }
+    }
+
+    if (min_cut_size == INT32_MAX) {
+        // no balanced cut
+        return {std::vector<int>(), INT32_MAX};
+    }
+    return {best_cut, min_cut_size};
 }
 
 void Graph::PrintGraph() const {
@@ -74,7 +150,7 @@ void Graph::InitRandomMST() {
 
     DisjointSets disjoint_sets(static_cast<int>(adj_list.size()));
     std::vector<std::pair<int, int> > mst_edges;
-    mst_edges.reserve(static_cast<int>(weighted_edges.size()) - 1);
+    mst_edges.reserve(static_cast<int>(weighted_edges.size()));
 
     for (const auto edge : weighted_edges) {
         if (!disjoint_sets.InSameSet(std::get<1>(edge), std::get<2>(edge))) {
@@ -105,4 +181,22 @@ std::vector<std::tuple<int, int, int> > Graph::RandomlyWeightedEdgeList() {
 
 void Graph::InitRandomSpanningTree() {
     // TODO
+}
+
+int Graph::SlowCutSize(const std::vector<int>& cut) {
+    std::unordered_set<int> cut_set;
+    for (int vertex : cut) {
+        cut_set.insert(vertex);
+    }
+
+    int cut_size = 0;
+    for (int vertex : cut) {
+        for (int neighbor : adj_list[vertex]) {
+            if (!cut_set.contains(neighbor)) {
+                ++cut_size;
+            }
+        }
+    }
+
+    return cut_size;
 }

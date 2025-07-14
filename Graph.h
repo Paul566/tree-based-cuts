@@ -16,11 +16,16 @@ class Graph {
                        const std::string &_tree_init_type = "random_mst",
                        int seed = 239);
 
-        std::pair<std::vector<int>, int> OneRespectedSparsestCut();
+        std::pair<std::vector<int>, float> OneRespectedSparsestCut();
 
         std::pair<std::vector<int>, int> OneRespectedMincut();
 
         std::pair<std::vector<int>, int> OneRespectedBalancedCut(float ratio);
+
+        // for testing purposes:
+        std::pair<std::vector<int>, float> SlowOneRespectedSparsestCut();
+        std::pair<std::vector<int>, int> SlowOneRespectedMincut();
+        std::pair<std::vector<int>, int> SlowOneRespectedBalancedCut(float ratio);
 
         void PrintGraph() const;
 
@@ -34,6 +39,8 @@ class Graph {
         std::vector<std::tuple<int, int, int> > RandomlyWeightedEdgeList();
 
         void InitRandomSpanningTree();
+
+        int SlowCutSize(const std::vector<int>& cut);
 };
 
 #endif //GRAPH_H

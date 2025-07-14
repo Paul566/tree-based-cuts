@@ -78,9 +78,9 @@ std::pair<std::vector<int>, float> Tree::OneRespectedSparsestCut() {
     float min_value = INT32_MAX;
     int best_edge = 0;
     for (int i = 0; i < static_cast<int>(cut_values.size()); ++i) {
-        float this_sparsity = cut_values[i] / std::min(subtree_sizes[ordered_edges[i]],
-                                                       static_cast<int>(adj_list.size()) - subtree_sizes[ordered_edges[
-                                                           i]]);
+        const float this_sparsity = static_cast<float>(cut_values[i]) / static_cast<float>(
+            std::min(subtree_sizes[ordered_edges[i]],
+            static_cast<int>(adj_list.size()) - subtree_sizes[ordered_edges[i]]));
         if (this_sparsity < min_value) {
             min_value = this_sparsity;
             best_edge = ordered_edges[i];
@@ -94,13 +94,13 @@ std::pair<std::vector<int>, int> Tree::OneRespectedBalancedCut(float ratio) {
     int min_cut_size = INT32_MAX;
     int best_edge = -1;
     for (int i = 0; i < static_cast<int>(cut_values.size()); ++i) {
-        if ((subtree_sizes[ordered_edges[i]] < adj_list.size() * ratio) || (adj_list.size() - subtree_sizes[
-            ordered_edges[i]] < adj_list.size() * ratio)) {
+        if ((static_cast<float>(subtree_sizes[ordered_edges[i]]) < static_cast<float>(adj_list.size()) * ratio) ||
+            (static_cast<float>(adj_list.size()) - static_cast<float>(subtree_sizes[ordered_edges[i]]) <
+                static_cast<float>(adj_list.size()) * ratio)) {
             continue;
         }
-        float this_sparsity = cut_values[i] / std::min(subtree_sizes[i],
-                                                       static_cast<int>(adj_list.size()) - subtree_sizes[i]);
-        if (this_sparsity < min_cut_size) {
+
+        if (cut_values[i] < min_cut_size) {
             min_cut_size = cut_values[i];
             best_edge = ordered_edges[i];
         }
