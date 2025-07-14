@@ -9,18 +9,20 @@
 class Graph {
     public:
         std::vector<std::vector<int> > adj_list;
-        std::string tree_init_type;
         Tree tree;
 
         explicit Graph(const std::vector<std::vector<int> > &_adj_list,
                        const std::string &_tree_init_type = "random_mst",
-                       int seed = 239);
+                       int seed_for_tree = 239);
 
         std::pair<std::vector<int>, float> OneRespectedSparsestCut();
+        // returns (list of vertices in a cut, sparsity of the cut)
 
         std::pair<std::vector<int>, int> OneRespectedMincut();
+        // returns (list of vertices in a cut, value of the cut)
 
         std::pair<std::vector<int>, int> OneRespectedBalancedCut(float ratio);
+        // returns (list of vertices in a cut, value of the cut)
 
         // for testing purposes:
         std::pair<std::vector<int>, float> SlowOneRespectedSparsestCut();
@@ -32,15 +34,17 @@ class Graph {
     private:
         std::mt19937 generator;
 
-        void PrepareTree();
+        void PrepareTree(std::string tree_init_type);
 
         void InitRandomMST();
 
         std::vector<std::tuple<int, int, int> > RandomlyWeightedEdgeList();
+        // returns a list of edges (weight, vertex1, vertex2), weights are random ints
 
         void InitRandomSpanningTree();
 
-        int SlowCutSize(const std::vector<int>& cut);
+        int SlowCutSize(const std::vector<int>& cut) const;
+        // returns the size of the cut, the cut is a list of vertices
 };
 
 #endif //GRAPH_H

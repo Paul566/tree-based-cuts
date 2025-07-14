@@ -6,18 +6,17 @@
 #include <vector>
 #include "DisjointSets.h"
 
-Graph::Graph(const std::vector<std::vector<int> > &_adj_list, const std::string &_tree_init_type, int seed) {
+Graph::Graph(const std::vector<std::vector<int> > &_adj_list, const std::string &_tree_init_type, int seed_for_tree) {
     if (_adj_list.size() <= 1) {
         throw std::runtime_error("Graph::Graph(): need at least two vertices");
     }
 
     adj_list = _adj_list;
-    tree_init_type = _tree_init_type;
-    generator = std::mt19937(seed);
+    generator = std::mt19937(seed_for_tree);
     // std::random_device rd;
     // generator = std::mt19937(rd());
 
-    PrepareTree();
+    PrepareTree(_tree_init_type);
 }
 
 std::pair<std::vector<int>, float> Graph::OneRespectedSparsestCut() {
@@ -37,7 +36,7 @@ std::pair<std::vector<int>, float> Graph::SlowOneRespectedSparsestCut() {
     std::vector<int> best_cut;
 
     for (int vertex = 0; vertex < static_cast<int>(adj_list.size()); ++vertex) {
-        if (vertex == tree.root) {
+        if (tree.SubtreeNodes(vertex).size() == static_cast<int>(adj_list.size())) {
             continue;
         }
 
@@ -59,7 +58,7 @@ std::pair<std::vector<int>, int> Graph::SlowOneRespectedMincut() {
     std::vector<int> best_cut;
 
     for (int vertex = 0; vertex < static_cast<int>(adj_list.size()); ++vertex) {
-        if (vertex == tree.root) {
+        if (tree.SubtreeNodes(vertex).size() == static_cast<int>(adj_list.size())) {
             continue;
         }
 
@@ -78,7 +77,7 @@ std::pair<std::vector<int>, int> Graph::SlowOneRespectedBalancedCut(float ratio)
     std::vector<int> best_cut;
 
     for (int vertex = 0; vertex < static_cast<int>(adj_list.size()); ++vertex) {
-        if (vertex == tree.root) {
+        if (tree.SubtreeNodes(vertex).size() == static_cast<int>(adj_list.size())) {
             continue;
         }
 
@@ -112,18 +111,9 @@ void Graph::PrintGraph() const {
         }
         std::cout << std::endl;
     }
-
-    std::cout << "Tree adjacency list:" << std::endl;
-    for (int i = 0; i < adj_list.size(); ++i) {
-        std::cout << i << ":";
-        for (int j : tree.adj_list[i]) {
-            std::cout << " " << j;
-        }
-        std::cout << std::endl;
-    }
 }
 
-void Graph::PrepareTree() {
+void Graph::PrepareTree(std::string tree_init_type) {
     if (tree_init_type == "random_mst") {
         InitRandomMST();
     } else {
@@ -137,7 +127,7 @@ void Graph::PrepareTree() {
     for (int i = 0; i < static_cast<int>(adj_list.size()); ++i) {
         for (int j : adj_list[i]) {
             if (i < j) {
-                tree.AddEdge(i, j);
+                tree.UpdateDeltaCut(i, j);
             }
         }
     }
@@ -163,9 +153,6 @@ void Graph::InitRandomMST() {
 }
 
 std::vector<std::tuple<int, int, int> > Graph::RandomlyWeightedEdgeList() {
-    // returns a list of edges (weight, vertex1, vertex2)
-    // weights are random ints
-
     std::vector<std::tuple<int, int, int> > weighted_edges;
 
     for (int i = 0; i < adj_list.size(); ++i) {
@@ -183,7 +170,7 @@ void Graph::InitRandomSpanningTree() {
     // TODO
 }
 
-int Graph::SlowCutSize(const std::vector<int>& cut) {
+int Graph::SlowCutSize(const std::vector<int>& cut) const {
     std::unordered_set<int> cut_set;
     for (int vertex : cut) {
         cut_set.insert(vertex);

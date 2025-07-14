@@ -26,7 +26,7 @@ Tree::Tree(std::vector<std::pair<int, int> > _edge_list) {
 Tree::Tree() {
 }
 
-void Tree::AddEdge(int node1, int node2) {
+void Tree::UpdateDeltaCut(int node1, int node2) {
     if ((parent[node1] == node2) || (parent[node2] == node1)) {
         return;
     }
