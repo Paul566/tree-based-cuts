@@ -35,30 +35,9 @@ void Tree::UpdateDeltaCut(int node1, int node2) {
         ++cut_size_e0;
     }
 
-    while (node1 != node2) {
-        if (depth[node1] < depth[node2]) {
-            std::swap(node1, node2);
-        }
-
-        if (path_indices[node1] == path_indices[node2]) {
-            if (parenting_edge_index[node1] - 1 >= 0) {
-                ++delta_cut[parenting_edge_index[node1] - 1];
-            }
-            if (parenting_edge_index[node2] - 1 >= 0) {
-                --delta_cut[parenting_edge_index[node2] - 1];
-            }
-            break;
-        }
-
-        if (parenting_edge_index[node1] - 1 >= 0) {
-            ++delta_cut[parenting_edge_index[node1] - 1];
-        }
-        int upperend_node = path_upper_end[path_indices[node1]];
-        if (parenting_edge_index[upperend_node] <= static_cast<int>(delta_cut.size()) - 1) {
-            --delta_cut[parenting_edge_index[upperend_node]];
-        }
-        node1 = parent[upperend_node];
-    }
+    int lca = LCA(node1, node2);
+    UpdateDeltaCutHalfPath(node1, lca);
+    UpdateDeltaCutHalfPath(node2, lca);
 }
 
 std::pair<std::vector<int>, int> Tree::OneRespectedMincut() {
@@ -230,6 +209,56 @@ void Tree::InitializePathData() {
     parenting_edge_index = std::vector<int>(adj_list.size(), -1);
     for (int i = 0; i < static_cast<int>(ordered_edges.size()); ++i) {
         parenting_edge_index[ordered_edges[i]] = i;
+    }
+}
+
+int Tree::LCA(int node1, int node2) const {
+    if ((node1 == root) || (node2 == root)) {
+        return root;
+    }
+
+    while (path_indices[node1] != path_indices[node2]) {
+        if (depth[path_upper_end[path_indices[node1]]] < depth[path_upper_end[path_indices[node2]]]) {
+            std::swap(node1, node2);
+        }
+        node1 = parent[path_upper_end[path_indices[node1]]];
+    }
+
+    if (depth[node1] < depth[node2]) {
+        return node1;
+    }
+    return node2;
+}
+
+void Tree::UpdateDeltaCutHalfPath(int node, int lca) {
+    while (depth[node] > depth[lca]) {
+        if (parenting_edge_index[node] - 1 >= 0) {
+            ++delta_cut[parenting_edge_index[node] - 1];
+        }
+
+        int upperend_node = path_upper_end[path_indices[node]];
+
+        if (upperend_node == lca) {
+            if (parenting_edge_index[upperend_node] - 1 >= 0) {
+                --delta_cut[parenting_edge_index[upperend_node] - 1];
+            }
+            break;
+        }
+
+        if (depth[upperend_node] < depth[lca]) {
+            if (parenting_edge_index[lca] - 1 >= 0) {
+                --delta_cut[parenting_edge_index[lca] - 1];
+            }
+            break;
+        }
+
+        if (parenting_edge_index[upperend_node] <= static_cast<int>(delta_cut.size()) - 1) {
+            --delta_cut[parenting_edge_index[upperend_node]];
+        }
+        node = parent[upperend_node];
+        /*if (parenting_edge_index[node] - 1 >= 0) {
+            ++delta_cut[parenting_edge_index[node] - 1];
+        }*/
     }
 }
 

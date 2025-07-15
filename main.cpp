@@ -109,31 +109,25 @@ void RunRandomUnweightedTests(int max_vertices,
         float sparsity = dist_sparsity(generator);
 
         auto adj_list = RandomConnectedGraph(num_vertices, num_edges, generator);
-        if (i == 5) {
-            std::cout << "test " << i << "\n";
-        }
         Graph graph(adj_list, "random_mst",239);
-        if (i == 5) {
-            graph.PrintGraph();
-        }
 
         auto [_sc, sparsest_cut_value] = graph.OneRespectedSparsestCut();
         auto [_mc, min_cut_value] = graph.OneRespectedMincut();
         auto [_bc, balanced_cut_value] = graph.OneRespectedBalancedCut(sparsity);
-        auto [_ssc, slow_sparsest_cut_value] = graph.OneRespectedSparsestCut();
-        auto [_smc, slow_min_cut_value] = graph.OneRespectedMincut();
-        auto [_sbc, slow_balanced_cut_value] = graph.OneRespectedBalancedCut(sparsity);
+        auto [_ssc, slow_sparsest_cut_value] = graph.SlowOneRespectedSparsestCut();
+        auto [_smc, slow_min_cut_value] = graph.SlowOneRespectedMincut();
+        auto [_sbc, slow_balanced_cut_value] = graph.SlowOneRespectedBalancedCut(sparsity);
 
         if (sparsest_cut_value != slow_sparsest_cut_value) {
-            std::cout << "test " << i << "\n";
+            graph.PrintGraph();
             throw std::runtime_error("sparsest cut test failed");
         }
         if (min_cut_value != slow_min_cut_value) {
-            std::cout << "test " << i << "\n";
+            graph.PrintGraph();
             throw std::runtime_error("min cut test failed");
         }
         if (balanced_cut_value != slow_balanced_cut_value) {
-            std::cout << "test " << i << "\n";
+            graph.PrintGraph();
             throw std::runtime_error("balanced cut test failed");
         }
     }
@@ -148,6 +142,17 @@ int main() {
     std::mt19937 generator(239);
 
     RunRandomUnweightedTests(100, 100000, generator);
+
+    /*std::vector<std::vector<int>> adj_list;
+    adj_list.emplace_back(std::vector<int>{4});
+    adj_list.emplace_back(std::vector<int>{4, 2});
+    adj_list.emplace_back(std::vector<int>{4, 1, 3});
+    adj_list.emplace_back(std::vector<int>{4, 2});
+    adj_list.emplace_back(std::vector<int>{2, 0, 1, 3});
+
+    Graph graph(adj_list, "random_mst",239);
+    auto [_sc, sparsest_cut_value] = graph.OneRespectedSparsestCut();
+    std::cout << sparsest_cut_value << std::endl;*/
 
     return 0;
 }

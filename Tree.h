@@ -52,6 +52,10 @@ class Tree {
         void InitializeHeavyParents();
 
         void InitializePathData();
+
+        int LCA(int node1, int node2) const;
+
+        void UpdateDeltaCutHalfPath(int node, int lca);
 };
 
 
