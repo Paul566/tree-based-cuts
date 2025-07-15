@@ -25,9 +25,9 @@ class Graph {
         // returns (list of vertices in a cut, value of the cut)
 
         // for testing purposes:
-        std::pair<std::vector<int>, float> SlowOneRespectedSparsestCut();
-        std::pair<std::vector<int>, int> SlowOneRespectedMincut();
-        std::pair<std::vector<int>, int> SlowOneRespectedBalancedCut(float ratio);
+        std::pair<std::vector<int>, float> SlowOneRespectedSparsestCut() const;
+        std::pair<std::vector<int>, int> SlowOneRespectedMincut() const;
+        std::pair<std::vector<int>, int> SlowOneRespectedBalancedCut(float ratio) const;
 
         void PrintGraph() const;
 

@@ -238,14 +238,7 @@ void Tree::UpdateDeltaCutHalfPath(int node, int lca) {
 
         int upperend_node = path_upper_end[path_indices[node]];
 
-        if (upperend_node == lca) {
-            if (parenting_edge_index[upperend_node] - 1 >= 0) {
-                --delta_cut[parenting_edge_index[upperend_node] - 1];
-            }
-            break;
-        }
-
-        if (depth[upperend_node] < depth[lca]) {
+        if (depth[upperend_node] <= depth[lca]) {
             if (parenting_edge_index[lca] - 1 >= 0) {
                 --delta_cut[parenting_edge_index[lca] - 1];
             }
@@ -256,9 +249,6 @@ void Tree::UpdateDeltaCutHalfPath(int node, int lca) {
             --delta_cut[parenting_edge_index[upperend_node]];
         }
         node = parent[upperend_node];
-        /*if (parenting_edge_index[node] - 1 >= 0) {
-            ++delta_cut[parenting_edge_index[node] - 1];
-        }*/
     }
 }
 
@@ -287,4 +277,8 @@ std::vector<int> Tree::SubtreeNodes(const int vertex) const {
     }
 
     return subtree;
+}
+
+int Tree::GetRoot() const {
+    return root;
 }

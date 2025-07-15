@@ -23,6 +23,8 @@ class Tree {
 
         std::vector<int> SubtreeNodes(int vertex) const;
 
+        int GetRoot() const;
+
     private:
         int root;
         std::vector<std::vector<int>> adj_list;
