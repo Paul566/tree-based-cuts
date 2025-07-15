@@ -218,6 +218,9 @@ int Tree::LCA(int node1, int node2) const {
     }
 
     while (path_indices[node1] != path_indices[node2]) {
+        if ((node1 == root) || (node2 == root)) {
+            return root;
+        }
         if (depth[path_upper_end[path_indices[node1]]] < depth[path_upper_end[path_indices[node2]]]) {
             std::swap(node1, node2);
         }
