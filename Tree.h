@@ -22,6 +22,7 @@ class Tree {
         // minimum ratio-balanced cut, if no such cut, returns ({}, inf)
 
         std::vector<int> SubtreeNodes(int vertex) const;
+        std::pair<std::vector<int>,std::vector<int>> SubtreesNodes(int vertex1, int vertex2) const;
 
         int GetRoot() const;
 
@@ -56,6 +57,9 @@ class Tree {
         void InitializePathData();
 
         int LCA(int node1, int node2) const;
+        bool IsAncestor(int node1, int node2) const;
+
+        std::vector<int> OutSubtreeNodes(int vertex) const;
 
         void UpdateDeltaCutHalfPath(int node, int lca);
 };

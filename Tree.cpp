@@ -4,6 +4,7 @@
 #include <stack>
 #include <stdexcept>
 #include <stdint.h>
+#include <set>
 
 Tree::Tree(std::vector<std::pair<int, int> > _edge_list) {
     if (_edge_list.empty()) {
@@ -281,6 +282,43 @@ std::vector<int> Tree::SubtreeNodes(const int vertex) const {
 
     return subtree;
 }
+
+std::vector<int> Tree::OutSubtreeNodes(int vertex) const {
+    // return the vertices outside the subtree
+    std::vector<int> result;
+
+    auto subtree = SubtreeNodes(vertex);
+    std::set<int> subtree_set(subtree.begin(), subtree.end());
+    for (int vertex2 = 0; vertex2 < adj_list.size(); ++vertex2) {
+        if (!(subtree_set.count(vertex2))) {
+            result.push_back(vertex2);
+        }
+    }
+    return result;
+}
+
+bool Tree::IsAncestor(int node1, int node2) const {
+    return LCA(node1, node2) == node1;
+}
+
+std::pair<std::vector<int>,std::vector<int>> Tree::SubtreesNodes(int vertex1, int vertex2) const {
+    // returns a list of vertices in the subtree, including this vertex
+    if (vertex1 == vertex2) {
+        throw std::runtime_error("vertex1 == vertex2");
+    }
+
+    if (IsAncestor(vertex1, vertex2)) {
+        return std::make_pair(OutSubtreeNodes(vertex1), SubtreeNodes(vertex2));
+    }
+
+    if (IsAncestor(vertex2, vertex1)) {
+        return std::make_pair(SubtreeNodes(vertex1), OutSubtreeNodes(vertex2));
+    }
+
+    return std::make_pair(SubtreeNodes(vertex1), SubtreeNodes(vertex2));
+
+}
+
 
 int Tree::GetRoot() const {
     return root;

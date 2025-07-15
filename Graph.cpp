@@ -102,6 +102,48 @@ std::pair<std::vector<int>, int> Graph::SlowOneRespectedBalancedCut(float ratio)
     return {best_cut, min_cut_size};
 }
 
+std::pair<std::vector<int>, int> Graph::SlowTwoRespectedBalancedCut(float ratio) const{
+    int min_cut_size = INT32_MAX;
+    std::vector<int> best_cut;
+    int graph_size = static_cast<int>(adj_list.size());
+
+    for (int vertex1 = 0; vertex1 < graph_size; ++vertex1) {
+        if (vertex1 == tree.GetRoot()) {
+            continue;
+        }
+
+        for (int vertex2 = vertex1 + 1; vertex2 < graph_size; ++vertex2) {
+            if (vertex2 == tree.GetRoot()) {
+                continue;
+            }
+
+            auto sub_trees = tree.SubtreesNodes(vertex1, vertex2);
+            auto cut = sub_trees.first;
+            cut.insert(cut.end(), sub_trees.second.begin(), sub_trees.second.end());
+
+            int cut_size = SlowCutSize(cut);
+            float part_size = cut.size();
+
+            if ((part_size < static_cast<float>(adj_list.size()) * ratio) ||
+                (static_cast<float>(adj_list.size()) - part_size < static_cast<float>(adj_list.size()) * ratio)) {
+                continue;
+                }
+
+            if (cut_size < min_cut_size) {
+                min_cut_size = cut_size;
+                best_cut = cut;
+            }
+        }
+    }
+
+    if (min_cut_size == INT32_MAX) {
+        // no balanced cut
+        return {std::vector<int>(), INT32_MAX};
+    }
+    return {best_cut, min_cut_size};
+}
+
+
 void Graph::PrintGraph() const {
     std::cout << "Adjacency list:" << std::endl;
     for (int i = 0; i < adj_list.size(); ++i) {
