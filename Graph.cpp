@@ -170,6 +170,7 @@ void Graph::PrepareTree(std::string tree_init_type) {
         for (int j : adj_list[i]) {
             if (i < j) {
                 tree.UpdateDeltaCut(i, j);
+                tree.HandleGraphEdge(std::make_pair(i, j));
             }
         }
     }

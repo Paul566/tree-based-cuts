@@ -1,10 +1,12 @@
 #include "Tree.h"
 
+#include <algorithm>
 #include <queue>
 #include <stack>
 #include <stdexcept>
 #include <stdint.h>
 #include <set>
+#include <cassert>
 
 Tree::Tree(std::vector<std::pair<int, int> > _edge_list) {
     if (_edge_list.empty()) {
@@ -22,6 +24,8 @@ Tree::Tree(std::vector<std::pair<int, int> > _edge_list) {
     InitializeSubtreeSizes();
     InitializeHeavyParents();
     InitializePathData();
+    tree_edge_to_path_in_edges.resize(adj_list.size() - 1);
+    tree_edge_to_path_out_edges.resize(adj_list.size() - 1);
 }
 
 Tree::Tree() {
@@ -39,6 +43,55 @@ void Tree::UpdateDeltaCut(int node1, int node2) {
     int lca = LCA(node1, node2);
     UpdateDeltaCutHalfPath(node1, lca);
     UpdateDeltaCutHalfPath(node2, lca);
+}
+
+void Tree::HandleGraphEdge(const Edge& edge) {
+    auto [node1, node2] = edge;
+    if ((parent[node1] == node2) || (parent[node2] == node1)) {
+        return;
+    }
+
+    int lca = LCA(node1, node2);
+
+    std::vector<std::pair<int, int>> segments;
+    auto segments1 = GetSegmentsFromHalfPath(node1, lca);
+    auto segments2 = GetSegmentsFromHalfPath(node2, lca);
+    segments.reserve(segments1.size() + segments2.size());
+    segments.insert(segments.end(), segments1.begin(), segments1.end());
+    segments.insert(segments.end(), segments2.begin(), segments2.end());
+    // TODO: check if there is more efficient way to do it
+
+    std::sort(segments.begin(), segments.end());
+
+    //sanity check, to be removed
+    for (int i = 0; i < segments.size(); ++i) {
+        assert((segments[i].first <= segments[i].second));
+        if (i < segments.size() - 1) {
+            assert((segments[i].second < segments[i+1].first));
+        }
+    }
+
+    for (int big_segment_start = 0; big_segment_start < segments.size(); ++big_segment_start) {
+
+        int big_segment_end = big_segment_start;
+        while (big_segment_end < segments.size() - 1 &&
+            segments[big_segment_end].second == segments[big_segment_start].first - 1) {
+            ++big_segment_end;
+        }
+
+        int start = segments[big_segment_start].first;
+        int end = segments[big_segment_end].second;
+
+        if (start == 0) {
+            e0_path_edges.push_back(edge);
+        } else {
+            tree_edge_to_path_in_edges[start-1].push_back(edge);
+        }
+
+        tree_edge_to_path_out_edges[end].push_back(edge);
+
+
+    }
 }
 
 std::pair<std::vector<int>, int> Tree::OneRespectedMincut() {
@@ -254,6 +307,41 @@ void Tree::UpdateDeltaCutHalfPath(int node, int lca) {
         }
         node = parent[upperend_node];
     }
+}
+
+std::vector<std::pair<int, int>> Tree::GetSegmentsFromHalfPath(int node, int lca) const {
+    std::vector<std::pair<int, int>> result;
+    if (node == lca) {
+        return result;
+    }
+
+    while (true) {
+
+        int upperend_node = path_upper_end[path_indices[node]];
+
+        // case 1: upperend_node is higher than lca, so we cut segment at lca-1
+        // (-1 b/c the last edge's node is before lca)
+        if (depth[upperend_node] <= depth[lca]) {
+            result.emplace_back(parenting_edge_index[node],
+                                parenting_edge_index[lca] - 1);
+            break;
+        }
+
+        // case 2: upperend_node is lca's son, still last segment
+        // (cannot be united with previous as lca may be root)
+        if (depth[upperend_node] == depth[lca] + 1) {
+            result.emplace_back(parenting_edge_index[node],
+                                parenting_edge_index[upperend_node]);
+            break;
+        }
+
+        // case 3: there are more segments, add this and continue
+        result.emplace_back(parenting_edge_index[node],
+                            parenting_edge_index[upperend_node]);
+
+        node = parent[upperend_node];
+    }
+    return result;
 }
 
 void Tree::UpdateCutValues() {

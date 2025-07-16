@@ -2,6 +2,8 @@
 #define TREE_H
 #include <vector>
 
+typedef std::pair<int, int> Edge;
+
 class Tree {
     public:
         explicit Tree(std::vector<std::pair<int, int>> _edge_list);
@@ -9,6 +11,9 @@ class Tree {
         Tree();
 
         void UpdateDeltaCut(int node1, int node2);
+
+        void HandleGraphEdge(const Edge& edge);
+
         // updates the delta_cut vector, when handling an edge of the graph (node1, node2)
 
         void UpdateCutValues();
@@ -46,6 +51,13 @@ class Tree {
         int cut_size_e0; // the size of the cut if we cut e[0]
         std::vector<int> cut_values; // cut_values[i] is the size of the 1-respected cut defined by e_i
 
+        // dict from i to list of edges (u,v) s.t. e[i] isn't in u->v, but e[i+1] is
+        std::vector<std::vector<Edge>> tree_edge_to_path_in_edges;
+        // dict from i to list of edges (u,v) s.t. e[i] is in u->v, but e[i+1] isn't
+        std::vector<std::vector<Edge>> tree_edge_to_path_out_edges;
+        // list of edges (u,v) s.t. e[0] is in u->v
+        std::vector<Edge> e0_path_edges;
+
         void InitializeTreeStructure();
 
         void InitializePostorderNodes();
@@ -62,6 +74,8 @@ class Tree {
         std::vector<int> OutSubtreeNodes(int vertex) const;
 
         void UpdateDeltaCutHalfPath(int node, int lca);
+        std::vector<std::pair<int, int>> GetSegmentsFromHalfPath(int node, int lca) const;
+
 };
 
 
