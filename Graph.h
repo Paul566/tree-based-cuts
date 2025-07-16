@@ -29,6 +29,7 @@ class Graph {
         std::pair<std::vector<int>, int> SlowOneRespectedMincut() const;
         std::pair<std::vector<int>, int> SlowOneRespectedBalancedCut(float ratio) const;
 
+        std::pair<std::vector<int>, int> SlowTwoRespectedMinCut(float ratio) const;
         std::pair<std::vector<int>, int> SlowTwoRespectedBalancedCut(float ratio) const;
 
         void PrintGraph() const;
