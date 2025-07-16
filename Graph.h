@@ -29,12 +29,12 @@ class Graph {
         std::pair<std::vector<int>, int> SlowOneRespectedMincut() const;
         std::pair<std::vector<int>, int> SlowOneRespectedBalancedCut(float ratio) const;
 
+        void CalculateTree(std::string tree_init_type);
+
         void PrintGraph() const;
 
     private:
         std::mt19937 generator;
-
-        void PrepareTree(std::string tree_init_type);
 
         void InitRandomMST();
 
