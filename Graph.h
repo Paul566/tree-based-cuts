@@ -34,6 +34,8 @@ class Graph {
         std::pair<std::vector<int>, int> SlowTwoRespectedMinCut() const;
         std::pair<std::vector<int>, int> SlowTwoRespectedBalancedCut(float ratio) const;
 
+        void CalculateTree(std::string tree_init_type);
+
         void PrintGraph() const;
 
     private:

@@ -16,7 +16,7 @@ Graph::Graph(const std::vector<std::vector<int> > &_adj_list, const std::string 
     // std::random_device rd;
     // generator = std::mt19937(rd());
 
-    PrepareTree(_tree_init_type);
+    CalculateTree(_tree_init_type);
 }
 
 std::pair<std::vector<int>, float> Graph::OneRespectedSparsestCut() {
@@ -195,7 +195,7 @@ void Graph::PrintGraph() const {
     }
 }
 
-void Graph::PrepareTree(std::string tree_init_type) {
+void Graph::CalculateTree(std::string tree_init_type) {
     if (tree_init_type == "random_mst") {
         InitRandomMST();
     } else {
@@ -229,6 +229,12 @@ void Graph::InitRandomMST() {
         if (!disjoint_sets.InSameSet(std::get<1>(edge), std::get<2>(edge))) {
             disjoint_sets.Unite(std::get<1>(edge), std::get<2>(edge));
             mst_edges.emplace_back(std::get<1>(edge), std::get<2>(edge));
+        }
+    }
+
+    for (int i = 1; i < static_cast<int>(adj_list.size()); ++i) {
+        if (!disjoint_sets.InSameSet(0, i)) {
+            throw std::runtime_error("The graph is disconnected");
         }
     }
 
