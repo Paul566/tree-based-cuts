@@ -3,6 +3,8 @@
 //
 
 #include "RangeQuery.h"
+
+#include <cassert>
 #include <climits>
 
 RangeQuery::RangeQuery(const std::vector<int> &nums) {
@@ -13,12 +15,43 @@ RangeQuery::RangeQuery(const std::vector<int> &nums) {
 
 }
 
+RangeQuery::RangeQuery(const std::map<int, int> &nums) {
+    int max_element = nums.rbegin()->first;
+    n = max_element + 1;
+    std::vector<int> nums_arr(n, INT_MAX);
+    for (auto [key, value]: nums) {
+        nums_arr[key] = value;
+    }
+    t.resize(4*n);
+    lazy.resize(4*n);
+    build(nums_arr, 1, 0, n-1);
+}
+
+
 void RangeQuery::update(int l, int r, int addend) {
+    assert((0 <= l && l <= r && r < n));
     recursive_update(1, 0, n-1, l, r, addend);
 }
 
 int RangeQuery::query_min(int l, int r) {
+    assert((0 <= l && l <= r && r < n));
     return recursive_query(1, 0, n-1, l, r);
+}
+
+int RangeQuery::query_min_full() {
+    return query_min(0, n-1);
+}
+
+int RangeQuery::query_min_without(int i) {
+    assert((0 <= i && i < n));
+    int res = INT_MAX;
+    if (i > 0) {
+        res = std::min(res, query_min(0, i-1));
+    }
+    if (i < n - 1) {
+        res = std::min(res, query_min(i+1, n-1));
+    }
+    return res;
 }
 
 void RangeQuery::build(const std::vector<int>& nums, int v, int tl, int tr) {

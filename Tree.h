@@ -2,6 +2,8 @@
 #define TREE_H
 #include <vector>
 
+#include "RangeQuery.h"
+
 typedef std::pair<int, int> Edge;
 
 class Tree {
@@ -59,7 +61,8 @@ class Tree {
         // dict from i to list of edges (u,v) s.t. e[i] is in u->v, but e[i+1] isn't (or e[i] is and i==n-1)
         std::vector<std::vector<Edge>> tree_edge_to_path_out_edges;
 
-        std::vector<int> weights;
+        std::map<int, RangeQuery> weights;
+        int global_weight;
 
         void InitializeTreeStructure();
 
@@ -70,6 +73,8 @@ class Tree {
         void InitializeHeavyParents();
 
         void InitializePathData();
+
+        void InitializeWeights();
 
         int LCA(int node1, int node2) const;
         bool IsAncestor(int node1, int node2) const;
