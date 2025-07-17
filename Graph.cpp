@@ -31,6 +31,11 @@ std::pair<std::vector<int>, int> Graph::OneRespectedBalancedCut(float ratio) {
     return tree.OneRespectedBalancedCut(ratio);
 }
 
+int Graph::TwoRespectedMinCut() {
+    return tree.TwoRespectedMinCut();
+}
+
+
 std::pair<std::vector<int>, float> Graph::SlowOneRespectedSparsestCut() const {
     float min_sparsity = INT32_MAX;
     std::vector<int> best_cut;
@@ -102,7 +107,7 @@ std::pair<std::vector<int>, int> Graph::SlowOneRespectedBalancedCut(float ratio)
     return {best_cut, min_cut_size};
 }
 
-std::pair<std::vector<int>, int> Graph::SlowTwoRespectedMinCut(float ratio) const{
+std::pair<std::vector<int>, int> Graph::SlowTwoRespectedMinCut() const{
     int min_cut_size = INT32_MAX;
     std::vector<int> best_cut;
     int graph_size = static_cast<int>(adj_list.size());

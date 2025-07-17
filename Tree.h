@@ -24,6 +24,9 @@ class Tree {
         std::pair<std::vector<int>, float> OneRespectedSparsestCut();
 
         std::pair<std::vector<int>, int> OneRespectedBalancedCut(float ratio);
+
+        int TwoRespectedMinCut();
+
         // minimum ratio-balanced cut, if no such cut, returns ({}, inf)
 
         std::vector<int> SubtreeNodes(int vertex) const;
@@ -51,12 +54,12 @@ class Tree {
         int cut_size_e0; // the size of the cut if we cut e[0]
         std::vector<int> cut_values; // cut_values[i] is the size of the 1-respected cut defined by e_i
 
-        // dict from i to list of edges (u,v) s.t. e[i] isn't in u->v, but e[i+1] is
+        // dict from i to list of edges (u,v) s.t. e[i-1] isn't in u->v, but e[i] is (or e[i] is and i==0)
         std::vector<std::vector<Edge>> tree_edge_to_path_in_edges;
-        // dict from i to list of edges (u,v) s.t. e[i] is in u->v, but e[i+1] isn't
+        // dict from i to list of edges (u,v) s.t. e[i] is in u->v, but e[i+1] isn't (or e[i] is and i==n-1)
         std::vector<std::vector<Edge>> tree_edge_to_path_out_edges;
-        // list of edges (u,v) s.t. e[0] is in u->v
-        std::vector<Edge> e0_path_edges;
+
+        std::vector<int> weights;
 
         void InitializeTreeStructure();
 
@@ -76,6 +79,10 @@ class Tree {
         void UpdateDeltaCutHalfPath(int node, int lca);
         std::vector<std::pair<int, int>> GetSegmentsFromHalfPath(int node, int lca) const;
 
+        void AddPath(const Edge& edge, int weight);
+        void AddOutPath(const Edge& edge, int weight);
+
+        int MinWithout(int edge);
 };
 
 

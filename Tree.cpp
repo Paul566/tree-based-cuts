@@ -26,6 +26,7 @@ Tree::Tree(std::vector<std::pair<int, int> > _edge_list) {
     InitializePathData();
     tree_edge_to_path_in_edges.resize(adj_list.size() - 1);
     tree_edge_to_path_out_edges.resize(adj_list.size() - 1);
+    weights.resize(adj_list.size(), 1);
 }
 
 Tree::Tree() {
@@ -79,19 +80,14 @@ void Tree::HandleGraphEdge(const Edge& edge) {
             ++big_segment_end;
         }
 
-        int start = segments[big_segment_start].first;
-        int end = segments[big_segment_end].second;
 
-        if (start == 0) {
-            e0_path_edges.push_back(edge);
-        } else {
-            tree_edge_to_path_in_edges[start-1].push_back(edge);
-        }
+        tree_edge_to_path_in_edges[segments[big_segment_start].first].push_back(edge);
 
-        tree_edge_to_path_out_edges[end].push_back(edge);
-
+        tree_edge_to_path_out_edges[segments[big_segment_end].second].push_back(edge);
 
     }
+
+    AddPath(edge, 1);
 }
 
 std::pair<std::vector<int>, int> Tree::OneRespectedMincut() {
@@ -144,6 +140,27 @@ std::pair<std::vector<int>, int> Tree::OneRespectedBalancedCut(float ratio) {
         return {std::vector<int>(), INT32_MAX};
     }
     return {SubtreeNodes(best_edge), min_cut_size};
+}
+
+int Tree::TwoRespectedMinCut() {
+    int min_cut_size = INT32_MAX;
+    //std::pair<int, int> best_edges = {-1, -1};
+    for (int t_edge = 0; t_edge < static_cast<int>(ordered_edges.size()); ++t_edge) {
+        for (auto g_edge: tree_edge_to_path_in_edges[t_edge]) {
+            AddPath(g_edge, -1);
+            AddOutPath(g_edge, 1);
+
+        }
+        int min_curr_cut = weights[ordered_edges[t_edge]] + MinWithout(t_edge);
+        min_cut_size = std::min(min_cut_size, min_curr_cut);
+
+        for (auto g_edge: tree_edge_to_path_out_edges[t_edge]) {
+            AddPath(g_edge, 1);
+            AddOutPath(g_edge, -1);
+
+        }
+    }
+    return  min_cut_size;
 }
 
 void Tree::InitializeTreeStructure() {
@@ -343,6 +360,38 @@ std::vector<std::pair<int, int>> Tree::GetSegmentsFromHalfPath(int node, int lca
     }
     return result;
 }
+
+void Tree::AddPath(const Edge &edge, int weight) {
+    auto [node1, node2] = edge;
+    int lca = LCA(node1, node2);
+    for (int node: {node1, node2}) {
+        while (node != lca) {
+            weights[node] += weight;
+            node = parent[node];
+        }
+    }
+}
+
+void Tree::AddOutPath(const Edge &edge, int weight) {
+    AddPath(edge, -weight);
+    for (int i = 0; i < static_cast<int>(weights.size()); ++i) {
+        weights[i] += weight;
+    }
+}
+
+int Tree::MinWithout(int edge) {
+    int res = INT_MAX;
+    for (int i = 0; i < static_cast<int>(weights.size()); ++i) {
+        if (i == root) {
+            continue;
+        }
+        if (i != ordered_edges[edge]) {
+            res = std::min(res, weights[i]);
+        }
+    }
+    return res;
+}
+
 
 void Tree::UpdateCutValues() {
     cut_values[0] = cut_size_e0;
