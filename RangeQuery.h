@@ -4,14 +4,20 @@
 
 #ifndef RANGEQUERY_H
 #define RANGEQUERY_H
+#include <map>
 #include <vector>
 
 
 class RangeQuery {
 public:
     explicit RangeQuery(const std::vector<int>& nums);
+    explicit RangeQuery(const std::map<int, int>& nums);
     void update(int l, int r, int addend);
     int query_min(int l, int r);
+
+    int query_min_full();
+
+    int query_min_without(int i);
 
 private:
     std::vector<int> t;

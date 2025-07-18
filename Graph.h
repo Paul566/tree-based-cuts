@@ -24,10 +24,15 @@ class Graph {
         std::pair<std::vector<int>, int> OneRespectedBalancedCut(float ratio);
         // returns (list of vertices in a cut, value of the cut)
 
+        int TwoRespectedMinCut();
+
         // for testing purposes:
         std::pair<std::vector<int>, float> SlowOneRespectedSparsestCut() const;
         std::pair<std::vector<int>, int> SlowOneRespectedMincut() const;
         std::pair<std::vector<int>, int> SlowOneRespectedBalancedCut(float ratio) const;
+
+        std::pair<std::vector<int>, int> SlowTwoRespectedMinCut() const;
+        std::pair<std::vector<int>, int> SlowTwoRespectedBalancedCut(float ratio) const;
 
         void CalculateTree(std::string tree_init_type);
 
@@ -35,6 +40,8 @@ class Graph {
 
     private:
         std::mt19937 generator;
+
+        void PrepareTree(std::string tree_init_type);
 
         void InitRandomMST();
 
