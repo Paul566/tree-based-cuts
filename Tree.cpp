@@ -1,5 +1,6 @@
 #include "Tree.h"
 
+#include <iostream>
 #include <queue>
 #include <stack>
 #include <stdexcept>
@@ -281,4 +282,8 @@ std::vector<int> Tree::SubtreeNodes(const int vertex) const {
 
 int Tree::GetRoot() const {
     return root;
+}
+
+std::vector<int> Tree::GetDepths() const {
+    return depth;
 }

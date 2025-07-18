@@ -25,6 +25,8 @@ class Tree {
 
         int GetRoot() const;
 
+        std::vector<int> GetDepths() const;
+
     private:
         int root;
         std::vector<std::vector<int>> adj_list;
