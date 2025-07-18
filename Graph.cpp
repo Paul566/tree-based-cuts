@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <iostream>
+#include <unordered_map>
 #include <unordered_set>
 #include <vector>
 #include "DisjointSets.h"
@@ -173,7 +174,60 @@ std::vector<std::tuple<int, int, int> > Graph::RandomlyWeightedEdgeList() {
 }
 
 void Graph::InitRandomSpanningTree() {
-    // TODO
+    std::unordered_set<int> in_tree;
+    std::vector<std::pair<int, int>> tree_edges;
+    std::uniform_int_distribution<int> vertex_dist(0, static_cast<int>(adj_list.size()) - 1);
+
+    // Start from a random node
+    int start = vertex_dist(generator);
+    in_tree.insert(start);
+
+    while (in_tree.size() < static_cast<int>(adj_list.size())) {
+        int next_vertex;
+        // Pick a random node not in the tree yet
+        do {
+            next_vertex = vertex_dist(generator);
+        } while (in_tree.contains(next_vertex));
+
+        std::unordered_map<int, int> parent;
+        std::unordered_set<int> visited;
+        int cur_vertex = next_vertex;
+
+        // Loop-erased random walk
+        while (!in_tree.contains(cur_vertex)) {
+            visited.insert(cur_vertex);
+            int next = RandomNeighbor(cur_vertex);
+            parent[cur_vertex] = next;
+
+            // Loop erasure: if a cycle is formed, overwrite earlier path
+            if (visited.contains(next)) {
+                while (visited.contains(cur_vertex)) {
+                    visited.erase(cur_vertex);
+                    cur_vertex = parent[cur_vertex];
+                }
+                cur_vertex = next;
+            } else {
+                cur_vertex = next;
+            }
+        }
+
+        // Add the path from u to the tree
+        cur_vertex = next_vertex;
+        while (!in_tree.count(cur_vertex)) {
+            int cur_parent = parent[cur_vertex];
+            tree_edges.emplace_back(cur_vertex, cur_parent);
+            in_tree.insert(cur_vertex);
+            cur_vertex = cur_parent;
+        }
+    }
+
+    tree = Tree(tree_edges);
+}
+
+int Graph::RandomNeighbor(const int vertex) {
+    const auto& neighbors = adj_list[vertex];
+    std::uniform_int_distribution<int> dist(0, neighbors.size() - 1);
+    return neighbors[dist(generator)];
 }
 
 int Graph::SlowCutSize(const std::vector<int>& cut) const {

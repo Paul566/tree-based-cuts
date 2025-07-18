@@ -43,6 +43,8 @@ class Graph {
 
         void InitRandomSpanningTree();
 
+        int RandomNeighbor(int vertex);
+
         int SlowCutSize(const std::vector<int>& cut) const;
         // returns the size of the cut, the cut is a list of vertices
 };
