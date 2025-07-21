@@ -5,10 +5,13 @@
 #include <queue>
 #include <set>
 #include <sstream>
+#include <unordered_set>
 #include <vector>
+
+#include "Clusterer.h"
 #include "Graph.h"
-#include "RangeQuery.h"
 #include "Tree.h"
+#include "KDTree.hpp"
 
 std::vector<std::vector<int> > ReadGraph(const std::string &path) {
     std::vector<std::vector<int> > adj_list;
@@ -40,6 +43,19 @@ std::vector<std::vector<int> > ReadGraph(const std::string &path) {
     input_file.close();
 
     return adj_list;
+}
+
+template<typename T>
+void ExportVector(const std::string &path, const std::vector<T> &vector) {
+    std::ofstream output(path);
+    std::cout << std::fixed;
+    std::cout << std::setprecision(4);
+
+    for (T element : vector) {
+        output << std::setprecision(4) << element << "\n";
+    }
+
+    output.close();
 }
 
 bool IsConnected(std::vector<std::vector<int> > adj_list) {
@@ -127,9 +143,33 @@ std::vector<std::vector<int> > RandomConnectedGraph(const int num_vertices,
     return adj_list;
 }
 
+std::vector<std::vector<int> > SquareGridGraph(int size) {
+    // returns an adjacency list for a size*size square grid
+    std::vector<std::vector<int> > adj_list(size * size, std::vector<int>());
+    for (int i = 0; i < size; ++i) {
+        for (int j = 0; j < size; ++j) {
+            if (i > 0) {
+                adj_list[i * size + j].push_back((i - 1) * size + j);
+            }
+            if (j > 0) {
+                adj_list[i * size + j].push_back(i * size + j - 1);
+            }
+            if (i < size - 1) {
+                adj_list[i * size + j].push_back((i + 1) * size + j);
+            }
+            if (j < size - 1) {
+                adj_list[i * size + j].push_back(i * size + j + 1);
+            }
+        }
+    }
+
+    return adj_list;
+}
+
 void RunRandomUnweightedTests(int max_vertices,
                               int num_tests,
-                              std::mt19937 &generator) {
+                              std::mt19937 &generator,
+                              std::string tree_init_type) {
     std::uniform_int_distribution<> dist_vertices(2, max_vertices);
 
     for (int i = 0; i < num_tests; ++i) {
@@ -144,7 +184,7 @@ void RunRandomUnweightedTests(int max_vertices,
         float sparsity = dist_sparsity(generator);
 
         auto adj_list = RandomConnectedGraph(num_vertices, num_edges, generator);
-        Graph graph(adj_list, "random_mst", 239);
+        Graph graph(adj_list, tree_init_type, 239);
 
         auto [_sc, sparsest_cut_value] = graph.OneRespectedSparsestCut();
         auto [_mc, min_cut_value] = graph.OneRespectedMincut();
@@ -229,17 +269,68 @@ void RunBalancedCutBenchmark(float ratio,
     }
 }
 
+void ExportGridCut(int size,
+                   std::string filename_cut,
+                   std::string filename_depths,
+                   int seed,
+                   std::string init_tree_type) {
+    auto adj_list = SquareGridGraph(size);
+    Graph graph(adj_list, init_tree_type, seed);
+    auto [cut, value] = graph.OneRespectedSparsestCut();
+    std::unordered_set<int> cut_set;
+    for (int element : cut) {
+        cut_set.insert(element);
+    }
+    std::vector<int> cut_mask(size * size, 0);
+    for (int i = 0; i < size * size; ++i) {
+        if (cut_set.contains(i)) {
+            cut_mask[i] = 1;
+        }
+    }
+
+    ExportVector(filename_cut, cut_mask);
+    ExportVector(filename_depths, graph.tree.GetDepths());
+}
+
 int main() {
     std::random_device rd;
     // std::mt19937 generator(rd());
     std::mt19937 generator(239);
 
-    // RunRandomUnweightedTests(100, 100000, generator);
+    std::vector<std::vector<float> > points;
+    points.push_back(std::vector<float>({0, 0}));
+    points.push_back(std::vector<float>({0.1, 0}));
+    points.push_back(std::vector<float>({0, 0.1}));
+    points.push_back(std::vector<float>({1, 1}));
+    points.push_back(std::vector<float>({1.1, 1}));
+    points.push_back(std::vector<float>({1, 1.1}));
+
+    Clusterer clusterer(points, 5, "kdtree");
+    auto labels = clusterer.ClusterLabels(2);
+    for (auto label : labels) {
+        std::cout << label << std::endl;
+    }
+
+    // RunRandomUnweightedTests(100, 100000, generator, "mst");
 
     // RunBalancedCutBenchmark((1. - 0.05) * 0.5, 10);
 
-    /*auto adj_list = ReadGraph("../graphs/bcsstk29.graph");
-    std::cout << BalancedCutSize(0.95 * 0.5, 1, adj_list) << '\n' << std::endl;*/
+    // std::vector<float> sparsities;
+    // for (int size = 10; size <= 1000; size += 1) {
+    //     std::cout << size << std::endl;
+    //     auto adj_list = SquareGridGraph(size);
+    //     Graph graph(adj_list, "random_spanning_tree", 239);
+    //     // Graph graph(adj_list, "random_mst", 239566);
+    //     auto [cut, value] = graph.OneRespectedSparsestCut();
+    //     sparsities.push_back(value);
+    // }
+    // ExportVector("../output/grid_sparsities", sparsities);
+
+    // ExportGridCut(512,
+    //               "../output/grid512_cut_randtree",
+    //               "../output/grid512_depth_randtree",
+    //               239,
+    //               "random_spanning_tree");
 
     return 0;
 }
