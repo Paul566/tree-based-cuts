@@ -4,7 +4,7 @@
 
 #include "RangeQuery.h"
 
-typedef std::pair<int, int> Edge;
+typedef std::tuple<int, int, float> Edge;   // (vertex1, vertex2, weight)
 
 class Tree {
     public:
@@ -12,23 +12,18 @@ class Tree {
 
         Tree();
 
-        void UpdateDeltaCut(int node1, int node2);
-
-        void HandleGraphEdge(const Edge& edge);
+        void UpdateDeltaCut(int node1, int node2, float weight);
 
         // updates the delta_cut vector, when handling an edge of the graph (node1, node2)
 
         void UpdateCutValues();
         // computes the sizes of 1-respected cuts based on delta_cut
 
-        std::pair<std::vector<int>, int> OneRespectedMincut();
+        std::pair<std::vector<int>, float> OneRespectedMincut() const;
 
-        std::pair<std::vector<int>, float> OneRespectedSparsestCut();
+        std::pair<std::vector<int>, float> OneRespectedSparsestCut() const;
 
-        std::pair<std::vector<int>, int> OneRespectedBalancedCut(float ratio);
-
-        int TwoRespectedMinCut();
-
+        std::pair<std::vector<int>, float> OneRespectedBalancedCut(float ratio) const;
         // minimum ratio-balanced cut, if no such cut, returns ({}, inf)
 
         std::vector<int> SubtreeNodes(int vertex) const;
@@ -54,17 +49,9 @@ class Tree {
         // path_indices[i] is the index of a path that the edge (i, parent[i]) belongs to, -1 if i is root
         std::vector<int> path_upper_end; // path_upper_end[path_index] is the vertex v such that (v, parent[v]) is the uppermost edge of the path
         std::vector<int> path_lower_end; // path_lower_end[path_index] is the vertex v such that (v, parent[v]) is the lowest edge of the path
-        std::vector<int> delta_cut; // delta_cut[i] = cut_size(e_{i+1}) - cut_size(e_i)
-        int cut_size_e0; // the size of the cut if we cut e[0]
-        std::vector<int> cut_values; // cut_values[i] is the size of the 1-respected cut defined by e_i
-
-        // dict from i to list of edges (u,v) s.t. e[i-1] isn't in u->v, but e[i] is (or e[i] is and i==0)
-        std::vector<std::vector<Edge>> tree_edge_to_path_in_edges;
-        // dict from i to list of edges (u,v) s.t. e[i] is in u->v, but e[i+1] isn't (or e[i] is and i==n-1)
-        std::vector<std::vector<Edge>> tree_edge_to_path_out_edges;
-
-        std::map<int, RangeQuery> weights;
-        int global_weight;
+        std::vector<float> delta_cut; // delta_cut[i] = cut_size(e_{i+1}) - cut_size(e_i)
+        float cut_size_e0; // the size of the cut if we cut e[0]
+        std::vector<float> cut_values; // cut_values[i] is the size of the 1-respected cut defined by e_i
 
         void InitializeTreeStructure();
 
@@ -83,7 +70,10 @@ class Tree {
 
         std::vector<int> OutSubtreeNodes(int vertex) const;
 
-        void UpdateDeltaCutHalfPath(int node, int lca);
+        void UpdateDeltaCutHalfPath(int node, int lca, float weight);
+
+
+
         std::vector<std::pair<int, int>> GetSegmentsFromHalfPath(int node, int lca) const;
 
         void AddPath(const Edge& edge, int weight);

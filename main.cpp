@@ -8,8 +8,8 @@
 #include <unordered_set>
 #include <vector>
 #include "Graph.h"
-#include "RangeQuery.h"
 #include "Tree.h"
+#include "KDTree.hpp"
 
 std::vector<std::vector<int> > ReadGraph(const std::string &path) {
     std::vector<std::vector<int> > adj_list;
@@ -295,20 +295,33 @@ int main() {
     // std::mt19937 generator(rd());
     std::mt19937 generator(239);
 
-    // RunRandomUnweightedTests(100, 100000, generator, "random_spanning_tree");
+    // std::vector<std::vector<double>> points;
+    // points.push_back(std::vector<double>({0,0,0}));
+    // points.push_back(std::vector<double>({0.1,0.1,0.1}));
+    // points.push_back(std::vector<double>({1,1,1}));
+    // points.push_back(std::vector<double>({1.1,1,1.1}));
+    //
+    // auto kdtree = KDTree(points);
+    // auto index = kdtree.nearest_indices(std::vector<double>({1, 1, 1}), 3);
+    // for (auto ind : index) {
+    //     std::cout << ind << std::endl;
+    //
+    // }
+
+    RunRandomUnweightedTests(100, 100000, generator, "random_mst");
 
     // RunBalancedCutBenchmark((1. - 0.05) * 0.5, 10);
 
-    std::vector<float> sparsities;
-    for (int size = 10; size <= 1000; size += 10) {
-        std::cout << size << std::endl;
-        auto adj_list = SquareGridGraph(size);
-        // Graph graph(adj_list, "random_spanning_tree", 239);
-        Graph graph(adj_list, "random_mst", 239566);
-        auto [cut, value] = graph.OneRespectedSparsestCut();
-        sparsities.push_back(value);
-    }
-    ExportVector("../output/grid_sparsities3", sparsities);
+    // std::vector<float> sparsities;
+    // for (int size = 10; size <= 1000; size += 1) {
+    //     std::cout << size << std::endl;
+    //     auto adj_list = SquareGridGraph(size);
+    //     Graph graph(adj_list, "random_spanning_tree", 239);
+    //     // Graph graph(adj_list, "random_mst", 239566);
+    //     auto [cut, value] = graph.OneRespectedSparsestCut();
+    //     sparsities.push_back(value);
+    // }
+    // ExportVector("../output/grid_sparsities", sparsities);
 
     // ExportGridCut(512,
     //               "../output/grid512_cut_randtree",
