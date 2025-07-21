@@ -18,6 +18,7 @@ Graph::Graph(const std::vector<std::vector<std::pair<int, float>> > &_adj_list, 
     // generator = std::mt19937(rd());
 
     CalculateTree(_tree_init_type);
+    FillWeights();
 }
 
 Graph::Graph(const std::vector<std::vector<int>> &_adj_list, const std::string &_tree_init_type, int seed_for_tree) {
@@ -31,6 +32,16 @@ Graph::Graph(const std::vector<std::vector<int>> &_adj_list, const std::string &
 
     generator = std::mt19937(seed_for_tree);
     CalculateTree(_tree_init_type);
+    FillWeights();
+}
+
+void Graph::FillWeights() {
+    for (int i = 0; i < static_cast<int>(adj_list.size()); ++i) {
+        for (auto [j, weight] : adj_list[i]) {
+            weights.insert({{i, j}, weight});
+            weights.insert({{j, i}, weight});
+        }
+    }
 }
 
 std::pair<std::vector<int>, float> Graph::OneRespectedSparsestCut() {

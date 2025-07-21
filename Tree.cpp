@@ -255,41 +255,6 @@ void Tree::UpdateDeltaCutHalfPath(int node, int lca, float weight) {
     }
 }
 
-std::vector<std::pair<int, int>> Tree::GetSegmentsFromHalfPath(int node, int lca) const {
-    std::vector<std::pair<int, int>> result;
-    if (node == lca) {
-        return result;
-    }
-
-    while (true) {
-
-        int upperend_node = path_upper_end[path_indices[node]];
-
-        // case 1: upperend_node is higher than lca, so we cut segment at lca-1
-        // (-1 b/c the last edge's node is before lca)
-        if (depth[upperend_node] <= depth[lca]) {
-            result.emplace_back(parenting_edge_index[node],
-                                parenting_edge_index[lca] - 1);
-            break;
-        }
-
-        // case 2: upperend_node is lca's son, still last segment
-        // (cannot be united with previous as lca may be root)
-        if (depth[upperend_node] == depth[lca] + 1) {
-            result.emplace_back(parenting_edge_index[node],
-                                parenting_edge_index[upperend_node]);
-            break;
-        }
-
-        // case 3: there are more segments, add this and continue
-        result.emplace_back(parenting_edge_index[node],
-                            parenting_edge_index[upperend_node]);
-
-        node = parent[upperend_node];
-    }
-    return result;
-}
-
 void Tree::UpdateCutValues() {
     cut_values[0] = cut_size_e0;
     for (int i = 0; i < static_cast<int>(delta_cut.size()); ++i) {

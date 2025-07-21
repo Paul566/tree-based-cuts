@@ -4,6 +4,8 @@
 
 #ifndef BALANCEDCUTFINDER_H
 #define BALANCEDCUTFINDER_H
+#include <map>
+
 #include "Graph.h"
 
 
@@ -37,12 +39,12 @@ class BalancedCutFinder {
     std::vector<std::pair<int, int>> GetSegmentsFromHalfPath(int node, int lca) const;
 
     // add `weight` among all tree edges in the path connecting nodes of `edge`
-    void AddPath(const Edge& edge, int weight);
+    void AddPath(const Edge& edge, bool negative);
 
-    void Update(int path, int l, int r, int weight);
+    void Update(int path, int l, int r, float weight);
 
     // add `weight` among all tree edges out the path connecting nodes of `edge`
-    void AddOutPath(const Edge& edge, int weight);
+    void AddOutPath(const Edge& edge, bool negative);
 
     // find min cut (within [n*factor, n-n*factor]) through `edge` and another tree edge
     int MinCutWithEdge(int edge);

@@ -8,6 +8,7 @@
 #include <unordered_set>
 #include <vector>
 
+#include "BalancedCutFinder.h"
 #include "Clusterer.h"
 #include "Graph.h"
 #include "Tree.h"
@@ -193,6 +194,10 @@ void RunRandomUnweightedTests(int max_vertices,
         auto [_smc, slow_min_cut_value] = graph.SlowOneRespectedMincut();
         auto [_sbc, slow_balanced_cut_value] = graph.SlowOneRespectedBalancedCut(sparsity);
 
+        auto [trc, slow_two_respected_cut] = graph.SlowTwoRespectedBalancedCut(sparsity);
+        BalancedCutFinder b(graph, graph.tree, sparsity);
+        int two_respected_cut = b.TwoRespectedBalancedCut();
+
         if (sparsest_cut_value != slow_sparsest_cut_value) {
             graph.PrintGraph();
             throw std::runtime_error("sparsest cut test failed");
@@ -204,6 +209,10 @@ void RunRandomUnweightedTests(int max_vertices,
         if (balanced_cut_value != slow_balanced_cut_value) {
             graph.PrintGraph();
             throw std::runtime_error("balanced cut test failed");
+        }
+        if (two_respected_cut != slow_two_respected_cut) {
+            graph.PrintGraph();
+            throw std::runtime_error("two balanced cut test failed");
         }
     }
 

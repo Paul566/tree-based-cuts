@@ -35,15 +35,19 @@ void BalancedCutFinder::InitializeWeights() {
             continue;
         }
 
-        for (int t_edge = tree.parenting_edge_index[tree.path_lower_end[path]];
-        t_edge <= tree.parenting_edge_index[tree.path_upper_end[path]]; t_edge++) {
-            if (tree.subtree_sizes[tree.ordered_edges[t_edge]] >= bound) {
-                int length = tree.parenting_edge_index[tree.path_upper_end[path]]
-                - t_edge + 1;
-                std::vector<int> path_weights(length, 1);
+        for (int t_edge_start = tree.parenting_edge_index[tree.path_lower_end[path]];
+        t_edge_start <= tree.parenting_edge_index[tree.path_upper_end[path]]; t_edge_start++) {
+            if (tree.subtree_sizes[tree.ordered_edges[t_edge_start]] >= bound) {
+                std::vector<float> path_weights;
+                for (int t_edge = t_edge_start; t_edge <= tree.parenting_edge_index[tree.path_upper_end[path]]; t_edge++ ) {
+                    int node1 = tree.ordered_edges[t_edge];
+                    int node2 = tree.parent[node1];
+                    float t_weight = graph.weights.at({node1, node2});
+                    path_weights.emplace_back(t_weight);
+                }
                 weights.insert({path, RangeQuery(path_weights)});
-                paths_gaps.insert({path, t_edge});
-                path_array_length.insert({path, length});
+                paths_gaps.insert({path, t_edge_start});
+                path_array_length.insert({path, path_weights.size()});
                 break;
             }
         }
@@ -56,16 +60,16 @@ void BalancedCutFinder::InitializeSegments() {
     tree_edge_to_path_in_edges.resize(tree.adj_list.size() - 1);
     tree_edge_to_path_out_edges.resize(tree.adj_list.size() - 1);
     for (int i = 0; i < static_cast<int>(graph.adj_list.size()); ++i) {
-        for (int j : graph.adj_list[i]) {
+        for (auto [j, weight] : graph.adj_list[i]) {
             if (i < j) {
-                HandleGraphEdge(std::make_pair(i, j));
+                HandleGraphEdge({i, j, weight});
             }
         }
     }
 }
 
 void BalancedCutFinder::HandleGraphEdge(const Edge& edge) {
-    auto [node1, node2] = edge;
+    auto [node1, node2, weight] = edge;
     if ((tree.parent[node1] == node2) || (tree.parent[node2] == node1)) {
         return;
     }
@@ -105,7 +109,7 @@ void BalancedCutFinder::HandleGraphEdge(const Edge& edge) {
 
     }
 
-    AddPath(edge, 1);
+    AddPath(edge, false);
 }
 
 std::vector<std::pair<int, int>> BalancedCutFinder::GetSegmentsFromHalfPath(int node, int lca) const {
@@ -143,8 +147,11 @@ std::vector<std::pair<int, int>> BalancedCutFinder::GetSegmentsFromHalfPath(int 
     return result;
 }
 
-void BalancedCutFinder::AddPath(const Edge &edge, int weight) {
-    auto [node1, node2] = edge;
+void BalancedCutFinder::AddPath(const Edge &edge, bool negative) {
+    auto [node1, node2, weight] = edge;
+    if (negative) {
+        weight = -weight;
+    }
     int lca = tree.LCA(node1, node2);
     for (int node: {node1, node2}) {
         if (node == lca) {
@@ -178,12 +185,16 @@ void BalancedCutFinder::AddPath(const Edge &edge, int weight) {
     }
 }
 
-void BalancedCutFinder::AddOutPath(const Edge &edge, int weight) {
-    AddPath(edge, -weight);
+void BalancedCutFinder::AddOutPath(const Edge &edge, bool negative) {
+    AddPath(edge, !negative);
+    auto [_, __, weight] = edge;
+    if (negative) {
+        weight = -weight;
+    }
     global_weight += weight;
 }
 
-void BalancedCutFinder::Update(int path, int l, int r, int weight) {
+void BalancedCutFinder::Update(int path, int l, int r, float weight) {
     if (!weights.contains(path)) {
         return;
     }
@@ -303,19 +314,21 @@ int BalancedCutFinder::TwoRespectedBalancedCut() {
     std::pair<int, int> best_edges = {-1, -1};
     for (int t_edge = 0; t_edge < static_cast<int>(tree.ordered_edges.size()); ++t_edge) {
         for (auto g_edge: tree_edge_to_path_in_edges[t_edge]) {
-            AddPath(g_edge, -1);
-            AddOutPath(g_edge, 1);
+            AddPath(g_edge, true);
+            AddOutPath(g_edge, false);
 
         }
         int min_curr_cut = MinCutWithEdge(t_edge);
         if (min_curr_cut != INT32_MAX) {
-            min_curr_cut++; // weight of t_edge
+            int node1 = tree.ordered_edges[t_edge];
+            int node2 = tree.parent[node1];
+            min_curr_cut += graph.weights.at({node1, node2}); // weight of t_edge
             min_cut_size = std::min(min_cut_size, min_curr_cut);
         }
 
         for (auto g_edge: tree_edge_to_path_out_edges[t_edge]) {
-            AddPath(g_edge, 1);
-            AddOutPath(g_edge, -1);
+            AddPath(g_edge, false);
+            AddOutPath(g_edge, true);
 
         }
     }

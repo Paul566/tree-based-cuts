@@ -7,7 +7,7 @@ add_executable(tree_based_cuts main.cpp Graph.cpp Graph.h Tree.cpp Tree.h Disjoi
         RangeQuery.cpp
         RangeQuery.h
         BalancedCutFinder.cpp
-        BalancedCutFinder.h)
+        BalancedCutFinder.h
         RangeQuery.h
         KDTree.cpp
         KDTree.hpp

@@ -52,6 +52,7 @@ class Tree {
         std::vector<float> delta_cut; // delta_cut[i] = cut_size(e_{i+1}) - cut_size(e_i)
         float cut_size_e0; // the size of the cut if we cut e[0]
         std::vector<float> cut_values; // cut_values[i] is the size of the 1-respected cut defined by e_i
+        std::vector<float> weights; // weights[i] - weight of e[i]
 
         void InitializeTreeStructure();
 
@@ -63,8 +64,6 @@ class Tree {
 
         void InitializePathData();
 
-        void InitializeWeights();
-
         int LCA(int node1, int node2) const;
         bool IsAncestor(int node1, int node2) const;
 
@@ -74,12 +73,7 @@ class Tree {
 
 
 
-        std::vector<std::pair<int, int>> GetSegmentsFromHalfPath(int node, int lca) const;
-
-        void AddPath(const Edge& edge, int weight);
-        void AddOutPath(const Edge& edge, int weight);
-
-        int MinWithout(int edge);
+    friend class BalancedCutFinder;
 };
 
 
