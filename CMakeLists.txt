@@ -7,4 +7,6 @@ add_executable(tree_based_cuts main.cpp Graph.cpp Graph.h Tree.cpp Tree.h Disjoi
         RangeQuery.cpp
         RangeQuery.h
         KDTree.cpp
-        KDTree.hpp)
+        KDTree.hpp
+        Clusterer.cpp
+        Clusterer.h)

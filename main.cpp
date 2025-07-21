@@ -7,6 +7,8 @@
 #include <sstream>
 #include <unordered_set>
 #include <vector>
+
+#include "Clusterer.h"
 #include "Graph.h"
 #include "Tree.h"
 #include "KDTree.hpp"
@@ -295,20 +297,21 @@ int main() {
     // std::mt19937 generator(rd());
     std::mt19937 generator(239);
 
-    // std::vector<std::vector<double>> points;
-    // points.push_back(std::vector<double>({0,0,0}));
-    // points.push_back(std::vector<double>({0.1,0.1,0.1}));
-    // points.push_back(std::vector<double>({1,1,1}));
-    // points.push_back(std::vector<double>({1.1,1,1.1}));
-    //
-    // auto kdtree = KDTree(points);
-    // auto index = kdtree.nearest_indices(std::vector<double>({1, 1, 1}), 3);
-    // for (auto ind : index) {
-    //     std::cout << ind << std::endl;
-    //
-    // }
+    std::vector<std::vector<float> > points;
+    points.push_back(std::vector<float>({0, 0}));
+    points.push_back(std::vector<float>({0.1, 0}));
+    points.push_back(std::vector<float>({0, 0.1}));
+    points.push_back(std::vector<float>({1, 1}));
+    points.push_back(std::vector<float>({1.1, 1}));
+    points.push_back(std::vector<float>({1, 1.1}));
 
-    RunRandomUnweightedTests(100, 100000, generator, "random_mst");
+    Clusterer clusterer(points, 5, "kdtree");
+    auto labels = clusterer.ClusterLabels(2);
+    for (auto label : labels) {
+        std::cout << label << std::endl;
+    }
+
+    // RunRandomUnweightedTests(100, 100000, generator, "mst");
 
     // RunBalancedCutBenchmark((1. - 0.05) * 0.5, 10);
 

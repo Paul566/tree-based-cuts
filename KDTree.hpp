@@ -47,14 +47,14 @@
 #include <memory>
 #include <vector>
 
-/// The point type (vector of double precision floats)
-using point_t = std::vector<double>;
+/// The point type (vector of float precision floats)
+using point_t = std::vector<float>;
 
 /// Array of indices
 using indexArr = std::vector<size_t>;
 
 /// Pair of point and Index
-using pointIndex = typename std::pair<std::vector<double>, size_t>;
+using pointIndex = typename std::pair<std::vector<float>, size_t>;
 
 class KDNode {
   public:
@@ -71,7 +71,7 @@ class KDNode {
     ~KDNode();
 
     // getter
-    double coord(size_t const&);
+    float coord(size_t const&);
 
     // conversions
     explicit operator bool();
@@ -85,16 +85,16 @@ using KDNodePtr = std::shared_ptr<KDNode>;
 KDNodePtr NewKDNodePtr();
 
 // square euclidean distance
-inline double dist2(point_t const&, point_t const&);
-inline double dist2(KDNodePtr const&, KDNodePtr const&);
+inline float dist2(point_t const&, point_t const&);
+inline float dist2(KDNodePtr const&, KDNodePtr const&);
 
 // Need for sorting
 class comparer {
   public:
     size_t idx;
     explicit comparer(size_t idx_);
-    inline bool compare_idx(std::pair<std::vector<double>, size_t> const&, //
-                            std::pair<std::vector<double>, size_t> const&  //
+    inline bool compare_idx(std::pair<std::vector<float>, size_t> const&, //
+                            std::pair<std::vector<float>, size_t> const&  //
     );
 };
 
@@ -165,7 +165,7 @@ class KDTree {
     ///
     /// @returns a vector containing the points and their respective indices
     /// which are at a distance smaller than rad to the input point.
-    pointIndexArr neighborhood(point_t const& pt, double const& rad);
+    pointIndexArr neighborhood(point_t const& pt, float const& rad);
 
     /// Get the points that are at a distance to the input point which is
     /// smaller than the input radius.
@@ -175,7 +175,7 @@ class KDTree {
     ///
     /// @returns a vector containing the points which are at a distance smaller
     /// than rad to the input point.
-    pointVec neighborhood_points(point_t const& pt, double const& rad);
+    pointVec neighborhood_points(point_t const& pt, float const& rad);
 
     /// Get the indices of points that are at a distance to the input point
     /// which is smaller than the input radius.
@@ -185,7 +185,7 @@ class KDTree {
     ///
     /// @returns a vector containing the indices of the points which are at a
     /// distance smaller than rad to the input point.
-    indexArr neighborhood_indices(point_t const& pt, double const& rad);
+    indexArr neighborhood_indices(point_t const& pt, float const& rad);
 
   private:
     KDNodePtr make_tree(pointIndexArr::iterator const& begin,
@@ -194,17 +194,17 @@ class KDTree {
 
     void knearest_(KDNodePtr const& branch, point_t const& pt,
                    size_t const& level, size_t const& num_nearest,
-                   std::list<std::pair<KDNodePtr, double>>& k_nearest_buffer);
+                   std::list<std::pair<KDNodePtr, float>>& k_nearest_buffer);
 
     void node_query_(KDNodePtr const& branch, point_t const& pt,
                      size_t const& level, size_t const& num_nearest,
-                     std::list<std::pair<KDNodePtr, double>>& k_nearest_buffer);
+                     std::list<std::pair<KDNodePtr, float>>& k_nearest_buffer);
 
     // default caller
     KDNodePtr nearest_(point_t const& pt);
 
     void neighborhood_(KDNodePtr const& branch, point_t const& pt,
-                       double const& rad2, size_t const& level,
+                       float const& rad2, size_t const& level,
                        pointIndexArr& nbh);
 
     KDNodePtr root_;

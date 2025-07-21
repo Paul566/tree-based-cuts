@@ -210,8 +210,8 @@ void Graph::PrintGraph() const {
 }
 
 void Graph::CalculateTree(std::string tree_init_type) {
-    if (tree_init_type == "mst") {
-        InitMST(EdgeList());
+    if (tree_init_type == "maximum_spanning_tree") {
+        InitMST(NegativelyWeightedEdgeList());
     } else {
         if (tree_init_type == "random_mst") {
             InitMST(RandomlyWeightedEdgeList());
@@ -271,13 +271,13 @@ std::vector<std::tuple<float, int, int> > Graph::RandomlyWeightedEdgeList() {
     return random_weighted_edges;
 }
 
-std::vector<std::tuple<float, int, int>> Graph::EdgeList() {
+std::vector<std::tuple<float, int, int>> Graph::NegativelyWeightedEdgeList() {
     std::vector<std::tuple<float, int, int> > weighted_edges;
 
     for (int i = 0; i < adj_list.size(); ++i) {
         for (int j = 0; j < adj_list[i].size(); ++j) {
             if (i < adj_list[i][j].first) {
-                weighted_edges.emplace_back(adj_list[i][j].second, i, adj_list[i][j].first);
+                weighted_edges.emplace_back(- adj_list[i][j].second, i, adj_list[i][j].first);
             }
         }
     }

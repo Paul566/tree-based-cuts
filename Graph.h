@@ -19,6 +19,8 @@ class Graph {
                        const std::string &_tree_init_type = "random_mst",
                        int seed_for_tree = 239);
 
+        Graph() {};
+
         std::pair<std::vector<int>, float> OneRespectedSparsestCut();
         // returns (list of vertices in a cut, sparsity of the cut)
 
@@ -50,7 +52,7 @@ class Graph {
         std::vector<std::tuple<float, int, int> > RandomlyWeightedEdgeList();
         // returns a list of edges (weight, vertex1, vertex2), weights are random ints
 
-        std::vector<std::tuple<float, int, int>> EdgeList();
+        std::vector<std::tuple<float, int, int>> NegativelyWeightedEdgeList();
 
         void InitRandomSpanningTree();
 
