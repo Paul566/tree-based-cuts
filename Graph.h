@@ -45,12 +45,12 @@ class Graph {
     private:
         std::mt19937 generator;
 
-        void PrepareTree(std::string tree_init_type);
+        void InitMST(std::vector<std::tuple<float, int, int> > weighted_edges);
 
-        void InitRandomMST();
-
-        std::vector<std::tuple<int, int, int> > RandomlyWeightedEdgeList();
+        std::vector<std::tuple<float, int, int> > RandomlyWeightedEdgeList();
         // returns a list of edges (weight, vertex1, vertex2), weights are random ints
+
+        std::vector<std::tuple<float, int, int>> EdgeList();
 
         void InitRandomSpanningTree();
 

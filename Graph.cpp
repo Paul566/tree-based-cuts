@@ -210,13 +210,17 @@ void Graph::PrintGraph() const {
 }
 
 void Graph::CalculateTree(std::string tree_init_type) {
-    if (tree_init_type == "random_mst") {
-        InitRandomMST();
+    if (tree_init_type == "mst") {
+        InitMST(EdgeList());
     } else {
-        if (tree_init_type == "random_spanning_tree") {
-            InitRandomSpanningTree();
+        if (tree_init_type == "random_mst") {
+            InitMST(RandomlyWeightedEdgeList());
         } else {
-            throw std::invalid_argument("Unsupported tree initialization type");
+            if (tree_init_type == "random_spanning_tree") {
+                InitRandomSpanningTree();
+            } else {
+                throw std::invalid_argument("Unsupported tree initialization type");
+            }
         }
     }
 
@@ -230,8 +234,7 @@ void Graph::CalculateTree(std::string tree_init_type) {
     tree.UpdateCutValues();
 }
 
-void Graph::InitRandomMST() {
-    auto weighted_edges = RandomlyWeightedEdgeList();
+void Graph::InitMST(std::vector<std::tuple<float, int, int> > weighted_edges) {
     std::sort(weighted_edges.begin(), weighted_edges.end());
 
     DisjointSets disjoint_sets(static_cast<int>(adj_list.size()));
@@ -254,8 +257,8 @@ void Graph::InitRandomMST() {
     tree = Tree(mst_edges);
 }
 
-std::vector<std::tuple<int, int, int> > Graph::RandomlyWeightedEdgeList() {
-    std::vector<std::tuple<int, int, int> > random_weighted_edges;
+std::vector<std::tuple<float, int, int> > Graph::RandomlyWeightedEdgeList() {
+    std::vector<std::tuple<float, int, int> > random_weighted_edges;
 
     for (int i = 0; i < adj_list.size(); ++i) {
         for (int j = 0; j < adj_list[i].size(); ++j) {
@@ -266,6 +269,20 @@ std::vector<std::tuple<int, int, int> > Graph::RandomlyWeightedEdgeList() {
     }
 
     return random_weighted_edges;
+}
+
+std::vector<std::tuple<float, int, int>> Graph::EdgeList() {
+    std::vector<std::tuple<float, int, int> > weighted_edges;
+
+    for (int i = 0; i < adj_list.size(); ++i) {
+        for (int j = 0; j < adj_list[i].size(); ++j) {
+            if (i < adj_list[i][j].first) {
+                weighted_edges.emplace_back(adj_list[i][j].second, i, adj_list[i][j].first);
+            }
+        }
+    }
+
+    return weighted_edges;
 }
 
 void Graph::InitRandomSpanningTree() {
