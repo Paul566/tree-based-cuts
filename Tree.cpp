@@ -24,10 +24,7 @@ Tree::Tree(std::vector<std::pair<int, int> > _edge_list) {
     InitializeSubtreeSizes();
     InitializeHeavyParents();
     InitializePathData();
-    tree_edge_to_path_in_edges.resize(adj_list.size() - 1);
-    tree_edge_to_path_out_edges.resize(adj_list.size() - 1);
-    InitializeWeights();
-    global_weight = 0;
+
 }
 
 Tree::Tree() {
@@ -47,49 +44,6 @@ void Tree::UpdateDeltaCut(int node1, int node2) {
     UpdateDeltaCutHalfPath(node2, lca);
 }
 
-void Tree::HandleGraphEdge(const Edge& edge) {
-    auto [node1, node2] = edge;
-    if ((parent[node1] == node2) || (parent[node2] == node1)) {
-        return;
-    }
-
-    int lca = LCA(node1, node2);
-
-    std::vector<std::pair<int, int>> segments;
-    auto segments1 = GetSegmentsFromHalfPath(node1, lca);
-    auto segments2 = GetSegmentsFromHalfPath(node2, lca);
-    segments.reserve(segments1.size() + segments2.size());
-    segments.insert(segments.end(), segments1.begin(), segments1.end());
-    segments.insert(segments.end(), segments2.begin(), segments2.end());
-    // TODO: check if there is more efficient way to do it
-
-    std::sort(segments.begin(), segments.end());
-
-    //sanity check, to be removed
-    for (int i = 0; i < segments.size(); ++i) {
-        assert((segments[i].first <= segments[i].second));
-        if (i < segments.size() - 1) {
-            assert((segments[i].second < segments[i+1].first));
-        }
-    }
-
-    for (int big_segment_start = 0; big_segment_start < segments.size(); ++big_segment_start) {
-
-        int big_segment_end = big_segment_start;
-        while (big_segment_end < segments.size() - 1 &&
-            segments[big_segment_end].second == segments[big_segment_start].first - 1) {
-            ++big_segment_end;
-        }
-
-
-        tree_edge_to_path_in_edges[segments[big_segment_start].first].push_back(edge);
-
-        tree_edge_to_path_out_edges[segments[big_segment_end].second].push_back(edge);
-
-    }
-
-    AddPath(edge, 1);
-}
 
 std::pair<std::vector<int>, int> Tree::OneRespectedMincut() {
     int min_cut_size = INT32_MAX;
@@ -143,26 +97,6 @@ std::pair<std::vector<int>, int> Tree::OneRespectedBalancedCut(float ratio) {
     return {SubtreeNodes(best_edge), min_cut_size};
 }
 
-int Tree::TwoRespectedMinCut() {
-    int min_cut_size = INT32_MAX;
-    //std::pair<int, int> best_edges = {-1, -1};
-    for (int t_edge = 0; t_edge < static_cast<int>(ordered_edges.size()); ++t_edge) {
-        for (auto g_edge: tree_edge_to_path_in_edges[t_edge]) {
-            AddPath(g_edge, -1);
-            AddOutPath(g_edge, 1);
-
-        }
-        int min_curr_cut = 1 + MinWithout(t_edge);
-        min_cut_size = std::min(min_cut_size, min_curr_cut);
-
-        for (auto g_edge: tree_edge_to_path_out_edges[t_edge]) {
-            AddPath(g_edge, 1);
-            AddOutPath(g_edge, -1);
-
-        }
-    }
-    return  min_cut_size;
-}
 
 void Tree::InitializeTreeStructure() {
     // initialize the children, parent and depth vectors
@@ -284,18 +218,6 @@ void Tree::InitializePathData() {
     }
 }
 
-void Tree::InitializeWeights() {
-
-    for (int path : path_indices) {
-        if (path < 0 || weights.contains(path)) {
-            continue;
-        }
-
-        int length = depth[path_lower_end[path]] - depth[path_upper_end[path]] + 1;
-        std::vector<int> path_weights(length, 1);
-        weights.insert({path, RangeQuery(path_weights)});
-    }
-}
 
 int Tree::LCA(int node1, int node2) const {
     if ((node1 == root) || (node2 == root)) {
@@ -340,99 +262,6 @@ void Tree::UpdateDeltaCutHalfPath(int node, int lca) {
     }
 }
 
-std::vector<std::pair<int, int>> Tree::GetSegmentsFromHalfPath(int node, int lca) const {
-    std::vector<std::pair<int, int>> result;
-    if (node == lca) {
-        return result;
-    }
-
-    while (true) {
-
-        int upperend_node = path_upper_end[path_indices[node]];
-
-        // case 1: upperend_node is higher than lca, so we cut segment at lca-1
-        // (-1 b/c the last edge's node is before lca)
-        if (depth[upperend_node] <= depth[lca]) {
-            result.emplace_back(parenting_edge_index[node],
-                                parenting_edge_index[lca] - 1);
-            break;
-        }
-
-        // case 2: upperend_node is lca's son, still last segment
-        // (cannot be united with previous as lca may be root)
-        if (depth[upperend_node] == depth[lca] + 1) {
-            result.emplace_back(parenting_edge_index[node],
-                                parenting_edge_index[upperend_node]);
-            break;
-        }
-
-        // case 3: there are more segments, add this and continue
-        result.emplace_back(parenting_edge_index[node],
-                            parenting_edge_index[upperend_node]);
-
-        node = parent[upperend_node];
-    }
-    return result;
-}
-
-void Tree::AddPath(const Edge &edge, int weight) {
-    auto [node1, node2] = edge;
-    int lca = LCA(node1, node2);
-    for (int node: {node1, node2}) {
-        if (node == lca) {
-            continue;
-        }
-
-        while (true) {
-
-            int path = path_indices[node];
-            int upper_end_node = path_upper_end[path];
-            int low_edge = parenting_edge_index[path_lower_end[path]];
-
-            // case 1: upper_end_node is higher than lca, so we update at lca-1
-            // (-1 b/c the last edge's node is before lca)
-            if (depth[upper_end_node] <= depth[lca]) {
-                weights.at(path).update(parenting_edge_index[node] - low_edge,
-                    parenting_edge_index[lca] - 1 - low_edge, weight);
-                break;
-            }
-
-            // case 2: upper_end_node is lca's son, update until upper_end_node
-            // (cannot be united with previous as lca may be root)
-            if (depth[upper_end_node] == depth[lca] + 1) {
-                weights.at(path).update(parenting_edge_index[node] - low_edge,
-                    parenting_edge_index[upper_end_node] - low_edge, weight);
-                break;
-            }
-
-            // case 3: there are more segments, update this and continue
-            weights.at(path).update(parenting_edge_index[node] - low_edge,
-                                parenting_edge_index[upper_end_node] - low_edge,
-                                weight);
-
-            node = parent[upper_end_node];
-        }
-    }
-}
-
-void Tree::AddOutPath(const Edge &edge, int weight) {
-    AddPath(edge, -weight);
-    global_weight += weight;
-}
-
-int Tree::MinWithout(int edge) {
-    int res = INT_MAX;
-    int edge_path = path_indices[ordered_edges[edge]];
-    for (auto [path, query] : weights) {
-        if (path == edge_path) {
-            int low_edge = parenting_edge_index[path_lower_end[path]];
-            res = std::min(res, query.query_min_without(edge - low_edge));
-        } else {
-            res = std::min(res, query.query_min_full());
-        }
-    }
-    return res + global_weight;
-}
 
 
 void Tree::UpdateCutValues() {

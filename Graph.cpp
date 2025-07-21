@@ -31,9 +31,6 @@ std::pair<std::vector<int>, int> Graph::OneRespectedBalancedCut(float ratio) {
     return tree.OneRespectedBalancedCut(ratio);
 }
 
-int Graph::TwoRespectedMinCut() {
-    return tree.TwoRespectedMinCut();
-}
 
 
 std::pair<std::vector<int>, float> Graph::SlowOneRespectedSparsestCut() const {
@@ -210,7 +207,6 @@ void Graph::CalculateTree(std::string tree_init_type) {
         for (int j : adj_list[i]) {
             if (i < j) {
                 tree.UpdateDeltaCut(i, j);
-                tree.HandleGraphEdge(std::make_pair(i, j));
             }
         }
     }
