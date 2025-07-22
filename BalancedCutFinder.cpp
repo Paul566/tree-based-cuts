@@ -15,6 +15,9 @@ graph(graph), tree(tree), factor(factor) {
     InitializeWeights();
     global_weight = 0;
     InitializeSegments();
+    for (int edge = 0; edge < n-1; edge++) {
+        edge_to_subtree_size.emplace_back(tree.subtree_sizes[tree.ordered_edges[edge]]);
+    }
 }
 
 
@@ -266,48 +269,52 @@ int BalancedCutFinder::MinOfPath(int path, int min_edge, int max_edge, int other
     return INT32_MAX;
 }
 
+int BinarySearch(const std::vector<int>& nums, int left, int right, int bound, bool upper) {
+    // given that nums (in range [left,right] is strickly increasing
+    // if upper: return minimum i s.t. left <= i <= right and nums[i]>=bound (or right+1 if non exist)
+    // otherwise return maximum i s.t. left <= i <= right and nums[i]<=bound (or left-1 if non exist)
+    assert(0 <= left && left <= right && right < nums.size());
+    if (upper && nums[right] < bound) {
+        return right + 1;
+    }
+    if (!upper && nums[left] > bound) {
+        return left - 1;
+    }
+    while (right - left > 1) {
+        int mid = left + (right - left) / 2;
+        if (nums[mid] > bound) {
+            right = mid;
+        } else {
+            left = mid;
+        }
+    }
+    if (upper) {
+        return nums[left] >= bound ? left : left + 1;
+    }
+    return nums[right] <= bound ? right : right - 1;
+}
+
+
 void BalancedCutFinder::GetMinMaxEdge(int &min_edge, int &max_edge, int min_subtree,
     int max_subtree, bool is_in_subtree) {
-
-    // TODO: binary research
+    if (min_edge > max_edge) {
+        return;
+    }
     if (is_in_subtree) {
-        while (min_edge <= max_edge) {
-            int subtree = tree.subtree_sizes[tree.ordered_edges[min_edge]];
-            if (subtree < min_subtree) {
-                min_edge++;
-            } else {
-                break;
-            }
+        min_edge = BinarySearch(edge_to_subtree_size, min_edge, max_edge, min_subtree, true);
+        if (min_edge > max_edge) {
+            return;
         }
-        while (min_edge <= max_edge) {
-            int subtree = tree.subtree_sizes[tree.ordered_edges[max_edge]];
-            if (subtree > max_subtree) {
-                max_edge--;
-            } else {
-                break;
-            }
-        }
+        max_edge = BinarySearch(edge_to_subtree_size, min_edge, max_edge, max_subtree, false);
     } else {
-        while (min_edge <= max_edge) {
-            int subtree = n-tree.subtree_sizes[tree.ordered_edges[min_edge]];
-            if (subtree > max_subtree) {
-                min_edge++;
-            } else {
-                break;
-            }
+        min_edge = BinarySearch(edge_to_subtree_size, min_edge, max_edge, n-max_subtree, true);
+        if (min_edge > max_edge) {
+            return;
         }
-        while (min_edge <= max_edge) {
-            int subtree = n-tree.subtree_sizes[tree.ordered_edges[max_edge]];
-            if (subtree < min_subtree) {
-                max_edge--;
-            } else {
-                break;
-            }
-        }
+        max_edge = BinarySearch(edge_to_subtree_size, min_edge, max_edge, n-min_subtree, false);
     }
 
 }
-
 
 int BalancedCutFinder::TwoRespectedBalancedCut() {
     int min_cut_size = INT32_MAX;

@@ -29,6 +29,7 @@ class BalancedCutFinder {
     // path p-> how much gap we have between e_i and weights[p]
     std::map<int, int> paths_gaps;
     std::map<int, int> path_array_length;
+    std::vector<int> edge_to_subtree_size;
 
     void InitializeWeights();
 
