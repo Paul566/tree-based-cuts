@@ -8,7 +8,8 @@
 Clusterer::Clusterer(const std::vector<std::vector<float> > &_points,
                      int _min_samples,
                      const std::string &_finding_neighbors_method) : points(_points),
-                                                                     finding_neighbors_method(_finding_neighbors_method),
+                                                                     finding_neighbors_method(
+                                                                         _finding_neighbors_method),
                                                                      min_samples(_min_samples) {
     if (!DimensionConsistencyCheck()) {
         throw std::runtime_error("In Clusterer: Dimensions of all the points mush be the same");
@@ -45,19 +46,39 @@ bool Clusterer::DimensionConsistencyCheck() const {
 
 void Clusterer::InitializeNeighborGraph() {
     auto kdtree = KDTree(points);
+    core_distances = std::vector<float>(points.size(), 0.);
 
     std::vector<std::vector<std::pair<int, float> > > adj_list = std::vector<std::vector<std::pair<int, float> > >(
         points.size(),
         std::vector<std::pair<int, float> >());
+
     for (int i = 0; i < static_cast<int>(points.size()); ++i) {
         auto neighbors = kdtree.nearest_indices(points[i], min_samples);
+        float max_distance = 0.;
         for (int neighbor : neighbors) {
             if (neighbor == i) {
                 continue;
             }
-            adj_list[i].emplace_back(neighbor, WeightFunction(Distance(i, neighbor)));
+            float this_distance = Distance(i, neighbor);
+            adj_list[i].emplace_back(neighbor, this_distance);
+            // so far use distances as weights, correct wrt mutual reachability distance in the next loop
+
+            if (this_distance > max_distance) {
+                max_distance = this_distance;
+            }
+        }
+        core_distances[i] = max_distance;
+    }
+
+    for (int i = 0; i < static_cast<int>(points.size()); ++i) {
+        auto neighbors = kdtree.nearest_indices(points[i], min_samples);
+        for (int j = 0; j < static_cast<int>(adj_list[i].size()); ++j) {
+            adj_list[i][j].second = WeightFunction(std::max(adj_list[i][j].second, std::max(
+                                                            core_distances[i],
+                                                            core_distances[adj_list[i][j].first])));
         }
     }
+
     neighbor_graph = Graph(adj_list, "maximum_spanning_tree");
 }
 
