@@ -314,13 +314,13 @@ int main() {
     points.push_back(std::vector<float>({1.1, 1}));
     points.push_back(std::vector<float>({1, 1.1}));
 
-    Clusterer clusterer(points, 4, "kdtree");
+    Clusterer clusterer(points, 2, "kdtree");
     auto labels = clusterer.ClusterLabels(2);
     for (auto label : labels) {
         std::cout << label << std::endl;
     }
 
-    // RunRandomUnweightedTests(100, 100000, generator, "mst");
+    // RunRandomUnweightedTests(100, 100000, generator, "random_mst");
 
     // RunBalancedCutBenchmark((1. - 0.05) * 0.5, 10);
 

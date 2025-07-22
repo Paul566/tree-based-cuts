@@ -56,12 +56,22 @@ void Clusterer::InitializeNeighborGraph() {
         auto neighbors = kdtree.nearest_indices(points[i], min_samples);
         float max_distance = 0.;
         for (int neighbor : neighbors) {
-            if (neighbor == i) {
-                continue;
-            }
             float this_distance = Distance(i, neighbor);
+
             adj_list[i].emplace_back(neighbor, this_distance);
             // so far use distances as weights, correct wrt mutual reachability distance in the next loop
+            bool i_in_neigbor_list = false;
+            // check if adj_list[neighbor] already contains i
+            // TODO this leads to O(m * maxdeg^2) time, maybe change that
+            for (auto [node, dist] : adj_list[neighbor]) {
+                if (node == i) {
+                    i_in_neigbor_list = true;
+                    break;
+                }
+            }
+            if (!i_in_neigbor_list) {
+                adj_list[neighbor].emplace_back(i, this_distance);
+            }
 
             if (this_distance > max_distance) {
                 max_distance = this_distance;
@@ -73,9 +83,9 @@ void Clusterer::InitializeNeighborGraph() {
     for (int i = 0; i < static_cast<int>(points.size()); ++i) {
         auto neighbors = kdtree.nearest_indices(points[i], min_samples);
         for (int j = 0; j < static_cast<int>(adj_list[i].size()); ++j) {
-            adj_list[i][j].second = WeightFunction(std::max(adj_list[i][j].second, std::max(
-                                                            core_distances[i],
-                                                            core_distances[adj_list[i][j].first])));
+                adj_list[i][j].second = WeightFunction(std::max(adj_list[i][j].second, std::max(
+                                                                core_distances[i],
+                                                                core_distances[adj_list[i][j].first])));
         }
     }
 
