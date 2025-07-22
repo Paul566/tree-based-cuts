@@ -9,12 +9,12 @@
 #include <set>
 #include <cassert>
 
-Tree::Tree(std::vector<std::pair<int, int> > _edge_list) {
-    if (_edge_list.empty()) {
-        throw std::runtime_error("The edge list is empty");
+Tree::Tree(int num_vertices, const std::vector<std::pair<int, int> > &_edge_list) {
+    if (num_vertices < 2) {
+        throw std::runtime_error("In Tree: need at least 2 vertices");
     }
 
-    adj_list = std::vector(_edge_list.size() + 1, std::vector<int>());
+    adj_list = std::vector(num_vertices, std::vector<int>());
     for (auto edge : _edge_list) {
         adj_list[edge.first].push_back(edge.second);
         adj_list[edge.second].push_back(edge.first);
@@ -95,6 +95,7 @@ std::pair<std::vector<int>, float> Tree::OneRespectedBalancedCut(float ratio) co
 void Tree::InitializeTreeStructure() {
     // initialize the children, parent and depth vectors
     // parent of the root is -1
+    // if the adj_list gives a disconnected graph, connects the components to the root
 
     root = 0;
     parent = std::vector<int>(adj_list.size());
@@ -104,23 +105,39 @@ void Tree::InitializeTreeStructure() {
     cut_size_e0 = 0.;
     cut_values = std::vector<float>(adj_list.size() - 1, 0.);
 
-    std::queue<int> queue;
     std::vector<bool> visited(adj_list.size(), false);
     int num_visited = 0;
-    queue.push(root);
-    visited[root] = true;
-    parent[root] = -1;
-    while (!queue.empty()) {
-        int node = queue.front();
-        queue.pop();
-        visited[node] = true;
-        ++num_visited;
-        for (int neighbor : adj_list[node]) {
-            if (!visited[neighbor]) {
-                queue.push(neighbor);
-                children[node].push_back(neighbor);
-                parent[neighbor] = node;
-                depth[neighbor] = depth[node] + 1;
+
+    for (int component_root = 0; component_root < static_cast<int>(adj_list.size()); ++component_root) {
+        if (visited[component_root]) {
+            continue;
+        }
+        std::queue<int> queue;
+        queue.push(component_root);
+        visited[component_root] = true;
+        if (component_root == root) {
+            parent[component_root] = -1;
+        } else {
+            parent[component_root] = root;
+            children[root].push_back(component_root);
+        }
+
+        while (!queue.empty()) {
+            const int node = queue.front();
+            queue.pop();
+            visited[node] = true;
+            ++num_visited;
+            for (int neighbor : adj_list[node]) {
+                if (!visited[neighbor]) {
+                    queue.push(neighbor);
+                    children[node].push_back(neighbor);
+                    parent[neighbor] = node;
+                    depth[neighbor] = depth[node] + 1;
+                } else {
+                    if (neighbor != parent[node]) {
+                        throw std::runtime_error("In Tree: the provided list of edges is not acyclic");
+                    }
+                }
             }
         }
     }

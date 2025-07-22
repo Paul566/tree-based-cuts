@@ -8,7 +8,7 @@ typedef std::tuple<int, int, float> Edge;   // (vertex1, vertex2, weight)
 
 class Tree {
     public:
-        explicit Tree(std::vector<std::pair<int, int>> _edge_list);
+        explicit Tree(int num_vertices, const std::vector<std::pair<int, int>> &_edge_list);
 
         Tree();
 

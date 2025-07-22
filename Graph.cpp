@@ -259,13 +259,7 @@ void Graph::InitMST(std::vector<std::tuple<float, int, int> > weighted_edges) {
         }
     }
 
-    for (int i = 1; i < static_cast<int>(adj_list.size()); ++i) {
-        if (!disjoint_sets.InSameSet(0, i)) {
-            throw std::runtime_error("The graph is disconnected");
-        }
-    }
-
-    tree = Tree(mst_edges);
+    tree = Tree(static_cast<int>(adj_list.size()), mst_edges);
 }
 
 std::vector<std::tuple<float, int, int> > Graph::RandomlyWeightedEdgeList() {
@@ -344,7 +338,7 @@ void Graph::InitRandomSpanningTree() {
         }
     }
 
-    tree = Tree(tree_edges);
+    tree = Tree(static_cast<int>(adj_list.size()), tree_edges);
 }
 
 int Graph::RandomNeighbor(const int vertex) {
