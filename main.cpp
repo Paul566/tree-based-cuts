@@ -217,9 +217,9 @@ void RunRandomTests(int max_vertices,
         auto [_smc, slow_min_cut_value] = graph.SlowOneRespectedMincut();
         auto [_sbc, slow_balanced_cut_value] = graph.SlowOneRespectedBalancedCut(sparsity);
 
-        auto [trc, slow_two_respected_cut] = graph.SlowTwoRespectedBalancedCut(sparsity);
+        auto [_strc, slow_two_respected_cut] = graph.SlowTwoRespectedBalancedCut(sparsity);
         BalancedCutFinder b(graph, graph.tree, sparsity);
-        float two_respected_cut = b.TwoRespectedBalancedCut();
+        auto [_trc, two_respected_cut] = b.TwoRespectedBalancedCut();
 
         if (std::abs(sparsest_cut_value - slow_sparsest_cut_value) > tolerance) {
             graph.PrintGraph();

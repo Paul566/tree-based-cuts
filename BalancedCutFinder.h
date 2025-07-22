@@ -12,7 +12,7 @@
 class BalancedCutFinder {
     public:
     BalancedCutFinder(const Graph& graph, const Tree& tree, float factor);
-    float TwoRespectedBalancedCut();
+    std::pair<std::vector<int>, float> TwoRespectedBalancedCut();
 
     private:
     const Graph& graph;
@@ -48,12 +48,12 @@ class BalancedCutFinder {
     void AddOutPath(const Edge& edge, bool negative);
 
     // find min cut (within [n*factor, n-n*factor]) through `edge` and another tree edge
-    float MinCutWithEdge(int edge);
+    std::pair<float, int> MinCutWithEdge(int edge);
 
     // find the min edge inside the path with index `path` in the segment [min_edge, max_edge].
     // together with another subtree of size `other_subtree`, the subtrees together need to have size
     // within [n*factor, n-n*factor]. If is_in_subtree, calculate the subtree rooted in it; otherwise, the outside subtree
-    float MinOfPath(int path, int min_edge, int max_edge, int other_subtree, bool is_in_subtree, RangeQuery &query);
+    std::pair<float, int> MinOfPath(int path, int min_edge, int max_edge, int other_subtree, bool is_in_subtree, RangeQuery &query);
 
     // adjust min_tree, max_tree to be in the window size we want to check
     void GetMinMaxEdge(int &min_edge, int &max_edge, int min_subtree, int max_subtree, bool is_in_subtree);

@@ -12,6 +12,7 @@ public:
     explicit RangeQuery(const std::vector<float>& nums);
     void update(int l, int r, float addend);
     float query_min(int l, int r);
+    int get_arg(int l, int r, float value, float tolerance);
 
 private:
     std::vector<float> t;

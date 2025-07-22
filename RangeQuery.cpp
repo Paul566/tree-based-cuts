@@ -5,7 +5,7 @@
 #include "RangeQuery.h"
 
 #include <cassert>
-#include <climits>
+#include <limits>
 
 RangeQuery::RangeQuery(const std::vector<float> &nums) {
     n = nums.size();
@@ -62,11 +62,23 @@ void RangeQuery::recursive_update(int v, int tl, int tr, int l, int r, float add
 
 float RangeQuery::recursive_query(int v, int tl, int tr, int l, int r) {
     if (l > r)
-        return INT_MAX;
+        return std::numeric_limits<float>::infinity();;
     if (l == tl && tr == r)
         return t[v];
     push(v);
     int tm = (tl + tr) / 2;
     return std::min(recursive_query(v*2, tl, tm, l, std::min(r, tm)),
                recursive_query(v*2+1, tm+1, tr, std::max(l, tm+1), r));
+}
+
+int RangeQuery::get_arg(int l, int r, float value, float tolerance) {
+    while (l < r) {
+        int m = (l+r)/2;
+        if (std::abs(value - query_min(l, m)) < tolerance) {
+            r = m;
+        } else {
+            l = m+1;
+        }
+    }
+    return l;
 }
