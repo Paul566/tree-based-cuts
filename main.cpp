@@ -144,6 +144,24 @@ std::vector<std::vector<int> > RandomConnectedGraph(const int num_vertices,
     return adj_list;
 }
 
+std::vector<std::vector<std::pair<int, float>>> AddRandomWeights(std::vector<std::vector<int>> adj_list, float min_weight, float max_weight, std::mt19937 &generator) {
+    std::vector<std::vector<std::pair<int, float>>> weighted_adj_list(adj_list.size(), std::vector<std::pair<int, float>>());
+
+    std::uniform_real_distribution<> dist_weights(min_weight, max_weight);
+    for (int i = 0; i < static_cast<int>(adj_list.size()); ++i) {
+        weighted_adj_list[i].reserve(adj_list[i].size());
+        for (int neighbor : adj_list[i]) {
+            if (neighbor > i) {
+                float weight = dist_weights(generator);
+                weighted_adj_list[i].emplace_back(neighbor, weight);
+                weighted_adj_list[neighbor].emplace_back(i, weight);
+            }
+        }
+    }
+
+    return weighted_adj_list;
+}
+
 std::vector<std::vector<int> > SquareGridGraph(int size) {
     // returns an adjacency list for a size*size square grid
     std::vector<std::vector<int> > adj_list(size * size, std::vector<int>());
@@ -167,10 +185,13 @@ std::vector<std::vector<int> > SquareGridGraph(int size) {
     return adj_list;
 }
 
-void RunRandomUnweightedTests(int max_vertices,
+void RunRandomTests(int max_vertices,
                               int num_tests,
                               std::mt19937 &generator,
-                              std::string tree_init_type) {
+                              std::string tree_init_type,
+                              float min_weight,
+                              float max_weight,
+                              float tolerance=0.0001) {
     std::uniform_int_distribution<> dist_vertices(2, max_vertices);
 
     for (int i = 0; i < num_tests; ++i) {
@@ -180,11 +201,13 @@ void RunRandomUnweightedTests(int max_vertices,
 
         int num_vertices = dist_vertices(generator);
         std::uniform_int_distribution<> dist_edges(num_vertices - 1, num_vertices * (num_vertices - 1) / 2);
+
         int num_edges = dist_edges(generator);
         std::uniform_real_distribution<> dist_sparsity(0, 0.5);
         float sparsity = dist_sparsity(generator);
 
-        auto adj_list = RandomConnectedGraph(num_vertices, num_edges, generator);
+        auto unweighted_adj_list = RandomConnectedGraph(num_vertices, num_edges, generator);
+        auto adj_list = AddRandomWeights(unweighted_adj_list, min_weight, max_weight, generator);
         Graph graph(adj_list, tree_init_type, 239);
 
         auto [_sc, sparsest_cut_value] = graph.OneRespectedSparsestCut();
@@ -196,22 +219,25 @@ void RunRandomUnweightedTests(int max_vertices,
 
         auto [trc, slow_two_respected_cut] = graph.SlowTwoRespectedBalancedCut(sparsity);
         BalancedCutFinder b(graph, graph.tree, sparsity);
-        int two_respected_cut = b.TwoRespectedBalancedCut();
+        float two_respected_cut = b.TwoRespectedBalancedCut();
 
-        if (sparsest_cut_value != slow_sparsest_cut_value) {
+        if (std::abs(sparsest_cut_value - slow_sparsest_cut_value) > tolerance) {
             graph.PrintGraph();
             throw std::runtime_error("sparsest cut test failed");
         }
-        if (min_cut_value != slow_min_cut_value) {
+        if (std::abs(min_cut_value - slow_min_cut_value) > tolerance) {
             graph.PrintGraph();
+            std::cout << min_cut_value << " vs " << slow_min_cut_value << std::endl;
             throw std::runtime_error("min cut test failed");
         }
-        if (balanced_cut_value != slow_balanced_cut_value) {
+        if (std::abs(balanced_cut_value - slow_balanced_cut_value) > tolerance) {
             graph.PrintGraph();
+            std::cout << balanced_cut_value << " vs " << slow_balanced_cut_value << std::endl;
             throw std::runtime_error("balanced cut test failed");
         }
-        if (two_respected_cut != slow_two_respected_cut) {
+        if (std::abs(two_respected_cut - slow_two_respected_cut) > tolerance) {
             graph.PrintGraph();
+            std::cout << two_respected_cut << " vs " << slow_two_respected_cut << std::endl;
             throw std::runtime_error("two balanced cut test failed");
         }
     }
@@ -320,7 +346,7 @@ int main() {
         std::cout << label << std::endl;
     }
 
-    // RunRandomUnweightedTests(100, 100000, generator, "random_mst");
+    RunRandomTests(100, 100000, generator, "random_mst", 0., 1., 0.01);
 
     // RunBalancedCutBenchmark((1. - 0.05) * 0.5, 10);
 

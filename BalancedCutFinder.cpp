@@ -207,8 +207,8 @@ void BalancedCutFinder::Update(int path, int l, int r, float weight) {
 }
 
 
-int BalancedCutFinder::MinCutWithEdge(int edge) {
-    int res = INT32_MAX;
+float BalancedCutFinder::MinCutWithEdge(int edge) {
+    float res = INT32_MAX;
     int node = tree.ordered_edges[edge];
     int edge_subtree = tree.subtree_sizes[tree.ordered_edges[edge]];
     int lca_edge;
@@ -250,7 +250,7 @@ int BalancedCutFinder::MinCutWithEdge(int edge) {
     return res + global_weight;
 }
 
-int BalancedCutFinder::MinOfPath(int path, int min_edge, int max_edge, int other_subtree,
+float BalancedCutFinder::MinOfPath(int path, int min_edge, int max_edge, int other_subtree,
     bool is_in_subtree, RangeQuery& query) {
     // n*factor <= other_subtree+x <= n-n*factor, x>=other_subtree
     int min_subtree = std::max(other_subtree, static_cast<int>(ceil(n*factor - other_subtree)));
@@ -309,8 +309,8 @@ void BalancedCutFinder::GetMinMaxEdge(int &min_edge, int &max_edge, int min_subt
 }
 
 
-int BalancedCutFinder::TwoRespectedBalancedCut() {
-    int min_cut_size = INT32_MAX;
+float BalancedCutFinder::TwoRespectedBalancedCut() {
+    float min_cut_size = INT32_MAX;
     std::pair<int, int> best_edges = {-1, -1};
     for (int t_edge = 0; t_edge < static_cast<int>(tree.ordered_edges.size()); ++t_edge) {
         for (auto g_edge: tree_edge_to_path_in_edges[t_edge]) {
@@ -318,7 +318,7 @@ int BalancedCutFinder::TwoRespectedBalancedCut() {
             AddOutPath(g_edge, false);
 
         }
-        int min_curr_cut = MinCutWithEdge(t_edge);
+        float min_curr_cut = MinCutWithEdge(t_edge);
         if (min_curr_cut != INT32_MAX) {
             int node1 = tree.ordered_edges[t_edge];
             int node2 = tree.parent[node1];

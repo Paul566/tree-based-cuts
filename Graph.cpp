@@ -84,7 +84,7 @@ std::pair<std::vector<int>, float> Graph::SlowOneRespectedSparsestCut() const {
 }
 
 std::pair<std::vector<int>, float> Graph::SlowOneRespectedMincut() const {
-    int min_cut_size = INT32_MAX;
+    float min_cut_size = INT32_MAX;
     std::vector<int> best_cut;
 
     for (int vertex = 0; vertex < static_cast<int>(adj_list.size()); ++vertex) {
@@ -103,7 +103,7 @@ std::pair<std::vector<int>, float> Graph::SlowOneRespectedMincut() const {
 }
 
 std::pair<std::vector<int>, float> Graph::SlowOneRespectedBalancedCut(float ratio) const {
-    int min_cut_size = INT32_MAX;
+    float min_cut_size = INT32_MAX;
     std::vector<int> best_cut;
 
     for (int vertex = 0; vertex < static_cast<int>(adj_list.size()); ++vertex) {
@@ -186,7 +186,7 @@ std::pair<std::vector<int>, float> Graph::SlowTwoRespectedBalancedCut(float rati
             auto cut = sub_trees.first;
             cut.insert(cut.end(), sub_trees.second.begin(), sub_trees.second.end());
 
-            int cut_size = SlowCutSize(cut);
+            float cut_size = SlowCutSize(cut);
             float part_size = cut.size();
 
             if ((part_size < static_cast<float>(adj_list.size()) * ratio) ||
