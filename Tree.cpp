@@ -40,8 +40,8 @@ void Tree::UpdateDeltaCut(int node1, int node2, int weight) {
     UpdateDeltaCutHalfPath(node2, lca, weight);
 }
 
-std::pair<std::vector<int>, long> Tree::OneRespectedMincut() const {
-    long min_cut_size = INT32_MAX;
+std::pair<std::vector<int>, int64_t> Tree::OneRespectedMincut() const {
+    int64_t min_cut_size = INT32_MAX;
     int best_edge = 0;
     for (int i = 0; i < static_cast<int>(cut_values.size()); ++i) {
         if (cut_values[i] < min_cut_size) {
@@ -53,12 +53,12 @@ std::pair<std::vector<int>, long> Tree::OneRespectedMincut() const {
     return {SubtreeNodes(best_edge), min_cut_size};
 }
 
-std::tuple<std::vector<int>, long, int> Tree::OneRespectedSparsestCut() const {
-    long best_cut_size = INT64_MAX;
+std::tuple<std::vector<int>, int64_t, int> Tree::OneRespectedSparsestCut() const {
+    int64_t best_cut_size = INT64_MAX;
     int best_denominator = 1;
     int best_edge = 0;
     for (int i = 0; i < static_cast<int>(cut_values.size()); ++i) {
-        long this_cut_size = cut_values[i];
+        int64_t this_cut_size = cut_values[i];
         int this_denominator = std::min(subtree_sizes[ordered_edges[i]],
                                         static_cast<int>(adj_list.size()) - subtree_sizes[ordered_edges[i]]);
 
@@ -73,8 +73,8 @@ std::tuple<std::vector<int>, long, int> Tree::OneRespectedSparsestCut() const {
     return {SubtreeNodes(best_edge), best_cut_size, best_denominator};
 }
 
-std::pair<std::vector<int>, long> Tree::OneRespectedBalancedCut(float ratio) const {
-    long min_cut_size = INT64_MAX;
+std::pair<std::vector<int>, int64_t> Tree::OneRespectedBalancedCut(float ratio) const {
+    int64_t min_cut_size = INT64_MAX;
     int best_edge = -1;
     for (int i = 0; i < static_cast<int>(cut_values.size()); ++i) {
         // TODO make a cleaner comparison
@@ -106,9 +106,9 @@ void Tree::InitializeTreeStructure() {
     parent = std::vector<int>(adj_list.size());
     children = std::vector<std::vector<int> >(adj_list.size(), std::vector<int>());
     depth = std::vector<int>(adj_list.size(), 0);
-    delta_cut = std::vector<long>(adj_list.size() - 2, 0.);
+    delta_cut = std::vector<int64_t>(adj_list.size() - 2, 0.);
     cut_size_e0 = 0;
-    cut_values = std::vector<long>(adj_list.size() - 1, 0.);
+    cut_values = std::vector<int64_t>(adj_list.size() - 1, 0.);
 
     std::vector<bool> visited(adj_list.size(), false);
     int num_visited = 0;
