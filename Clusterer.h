@@ -23,7 +23,7 @@ class Clusterer {
     private:
         bool DimensionConsistencyCheck() const; // checks that all the points have the same dimension
 
-        void InitializeNeighborGraph();
+        void InitializeNeighborGraph(int max_integer_weight = 1'000'000'000);
         // TODO add brute force nearest neighbors also, in case of high dimension
 
         static float WeightFunction(float distance);   // the weight of an edge is 1/distance
@@ -32,13 +32,13 @@ class Clusterer {
 
         int SparsestCutEdge() const;  // the node of the lower end of the sparsest cut edge
 
-        // void CutEdge(int edge); // makes a cut at a given edge, edge = its lower endpoint
-        //
-        // void UpdateSubtreeSizes(int cut_edge);
-        //
-        // void UpdateComponentSizes(int cut_edge);
+        void CutEdge(int edge); // makes a cut at a given edge, edge = its lower endpoint
 
-        // int RootOfComponent(int vertex);
+        void UpdateSubtreeSizes(int cut_edge);
+
+        void UpdateComponentSizes(int cut_edge);
+
+        int RootOfComponent(int vertex) const;
 
         std::vector<float> core_distances;
         Graph neighbor_graph;

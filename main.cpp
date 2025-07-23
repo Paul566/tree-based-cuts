@@ -338,14 +338,15 @@ int main() {
     points.push_back(std::vector<float>({1, 1}));
     points.push_back(std::vector<float>({1.1, 1}));
     points.push_back(std::vector<float>({1, 1.1}));
+    points.push_back(std::vector<float>({0.5, 0.5}));
 
-    // Clusterer clusterer(points, 2, "kdtree");
-    // auto labels = clusterer.ClusterLabels(2);
-    // for (auto label : labels) {
-    //     std::cout << label << std::endl;
-    // }
+    Clusterer clusterer(points, 3, "kdtree");
+    auto labels = clusterer.ClusterLabels(2);
+    for (auto label : labels) {
+        std::cout << label << std::endl;
+    }
 
-    RunRandomTests(100, 100000, generator, "random_mst", 0, 10);
+    // RunRandomTests(100, 100000, generator, "random_mst", 0, 10);
 
     // RunBalancedCutBenchmark((1. - 0.05) * 0.5, 10);
 
