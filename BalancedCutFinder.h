@@ -12,7 +12,7 @@
 class BalancedCutFinder {
     public:
     BalancedCutFinder(const Graph& graph, const Tree& tree, float factor);
-    float TwoRespectedBalancedCut();
+    long TwoRespectedBalancedCut();
 
     private:
     const Graph& graph;
@@ -24,7 +24,7 @@ class BalancedCutFinder {
     // dict from i to list of edges (u,v) s.t. e[i] is in u->v, but e[i+1] isn't (or e[i] is and i==n-1)
     std::vector<std::vector<Edge>> tree_edge_to_path_out_edges;
     std::map<int, RangeQuery> weights;
-    float global_weight;
+    long global_weight;
 
     // path p-> how much gap we have between e_i and weights[p]
     std::map<int, int> paths_gaps;
@@ -42,18 +42,18 @@ class BalancedCutFinder {
     // add `weight` among all tree edges in the path connecting nodes of `edge`
     void AddPath(const Edge& edge, bool negative);
 
-    void Update(int path, int l, int r, float weight);
+    void Update(int path, int l, int r, int weight);
 
     // add `weight` among all tree edges out the path connecting nodes of `edge`
     void AddOutPath(const Edge& edge, bool negative);
 
     // find min cut (within [n*factor, n-n*factor]) through `edge` and another tree edge
-    float MinCutWithEdge(int edge);
+    long MinCutWithEdge(int edge);
 
     // find the min edge inside the path with index `path` in the segment [min_edge, max_edge].
     // together with another subtree of size `other_subtree`, the subtrees together need to have size
     // within [n*factor, n-n*factor]. If is_in_subtree, calculate the subtree rooted in it; otherwise, the outside subtree
-    float MinOfPath(int path, int min_edge, int max_edge, int other_subtree, bool is_in_subtree, RangeQuery &query);
+    long MinOfPath(int path, int min_edge, int max_edge, int other_subtree, bool is_in_subtree, RangeQuery &query);
 
     // adjust min_tree, max_tree to be in the window size we want to check
     void GetMinMaxEdge(int &min_edge, int &max_edge, int min_subtree, int max_subtree, bool is_in_subtree);

@@ -14,7 +14,10 @@ Clusterer::Clusterer(const std::vector<std::vector<float> > &_points,
     if (!DimensionConsistencyCheck()) {
         throw std::runtime_error("In Clusterer: Dimensions of all the points mush be the same");
     }
+
     InitializeNeighborGraph();
+
+    component_sizes = std::vector<int>(points.size(), static_cast<int>(points.size()));
 }
 
 std::vector<int> Clusterer::ClusterLabels(const int num_clusters) {
@@ -23,7 +26,7 @@ std::vector<int> Clusterer::ClusterLabels(const int num_clusters) {
     }
 
     std::vector<int> labels(points.size(), 0);
-    auto [cut, sparsity] = neighbor_graph.OneRespectedSparsestCut();
+    auto [cut, cut_size, denominator] = neighbor_graph.OneRespectedSparsestCut();
     for (int index : cut) {
         labels[index] = 1;
     }
@@ -48,9 +51,10 @@ void Clusterer::InitializeNeighborGraph() {
     auto kdtree = KDTree(points);
     core_distances = std::vector<float>(points.size(), 0.);
 
-    std::vector<std::vector<std::pair<int, float> > > adj_list = std::vector<std::vector<std::pair<int, float> > >(
+    // TODO do the rescaling
+    std::vector<std::vector<std::pair<int, int> > > adj_list = std::vector<std::vector<std::pair<int, int> > >(
         points.size(),
-        std::vector<std::pair<int, float> >());
+        std::vector<std::pair<int, int> >());
 
     for (int i = 0; i < static_cast<int>(points.size()); ++i) {
         auto neighbors = kdtree.nearest_indices(points[i], min_samples);
@@ -83,7 +87,7 @@ void Clusterer::InitializeNeighborGraph() {
     for (int i = 0; i < static_cast<int>(points.size()); ++i) {
         auto neighbors = kdtree.nearest_indices(points[i], min_samples);
         for (int j = 0; j < static_cast<int>(adj_list[i].size()); ++j) {
-                adj_list[i][j].second = WeightFunction(std::max(adj_list[i][j].second, std::max(
+                adj_list[i][j].second = WeightFunction(std::max(static_cast<float>(adj_list[i][j].second), std::max(
                                                                 core_distances[i],
                                                                 core_distances[adj_list[i][j].first])));
         }
@@ -104,3 +108,34 @@ float Clusterer::Distance(const int point_index_1, const int point_index_2) cons
     }
     return std::sqrt(norm_squared);
 }
+
+int Clusterer::SparsestCutEdge() const {
+    float min_value = INT32_MAX;
+    int best_edge = 0;
+    for (int i = 0; i < static_cast<int>(neighbor_graph.tree.cut_values.size()); ++i) {
+        const float this_sparsity = neighbor_graph.tree.cut_values[i] / static_cast<float>(
+            std::min(neighbor_graph.tree.subtree_sizes[neighbor_graph.tree.ordered_edges[i]],
+            component_sizes[neighbor_graph.tree.ordered_edges[i]] - neighbor_graph.tree.subtree_sizes[neighbor_graph.tree.ordered_edges[i]]));
+        if ((this_sparsity < min_value) && (!cut_tree_edges.contains(neighbor_graph.tree.ordered_edges[i]))) {
+            min_value = this_sparsity;
+            best_edge = neighbor_graph.tree.ordered_edges[i];
+        }
+    }
+
+    return best_edge;
+}
+
+// void Clusterer::CutEdge(const int edge) {
+//     cut_tree_edges.insert(edge);
+//     UpdateSubtreeSizes(edge);
+//     UpdateComponentSizes(edge);
+// }
+//
+// void Clusterer::UpdateSubtreeSizes(int cut_edge) {
+//     int local_root = RootOfComponent(cut_edge);
+//     int subtree_size = neighbor_graph.tree.subtree_sizes[cut_edge];
+//     int cur_vertex = neighbor_graph.tree.parent[cut_edge];
+//     while (cur_vertex != local_root) {
+//         // TODO
+//     }
+// }

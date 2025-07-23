@@ -7,7 +7,7 @@
 #include <cassert>
 #include <climits>
 
-RangeQuery::RangeQuery(const std::vector<float> &nums) {
+RangeQuery::RangeQuery(const std::vector<long> &nums) {
     n = nums.size();
     t.resize(4*n);
     lazy.resize(4*n);
@@ -15,17 +15,17 @@ RangeQuery::RangeQuery(const std::vector<float> &nums) {
 
 }
 
-void RangeQuery::update(int l, int r, float addend) {
+void RangeQuery::update(int l, int r, long addend) {
     assert((0 <= l && l <= r && r < n));
     recursive_update(1, 0, n-1, l, r, addend);
 }
 
-float RangeQuery::query_min(int l, int r) {
+long RangeQuery::query_min(int l, int r) {
     assert((0 <= l && l <= r && r < n));
     return recursive_query(1, 0, n-1, l, r);
 }
 
-void RangeQuery::build(const std::vector<float>& nums, int v, int tl, int tr) {
+void RangeQuery::build(const std::vector<long>& nums, int v, int tl, int tr) {
     if (tl == tr) {
         t[v] = nums[tl];
     } else {
@@ -45,7 +45,7 @@ void RangeQuery::push(int v) {
 }
 
 
-void RangeQuery::recursive_update(int v, int tl, int tr, int l, int r, float addend) {
+void RangeQuery::recursive_update(int v, int tl, int tr, int l, int r, long addend) {
     if (l > r)
         return;
     if (l == tl && tr == r) {
@@ -60,7 +60,7 @@ void RangeQuery::recursive_update(int v, int tl, int tr, int l, int r, float add
     }
 }
 
-float RangeQuery::recursive_query(int v, int tl, int tr, int l, int r) {
+long RangeQuery::recursive_query(int v, int tl, int tr, int l, int r) {
     if (l > r)
         return INT_MAX;
     if (l == tl && tr == r)

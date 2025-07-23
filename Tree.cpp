@@ -30,7 +30,7 @@ Tree::Tree(int num_vertices, const std::vector<std::pair<int, int> > &_edge_list
 Tree::Tree() {
 }
 
-void Tree::UpdateDeltaCut(int node1, int node2, float weight) {
+void Tree::UpdateDeltaCut(int node1, int node2, int weight) {
     if ((parenting_edge_index[node1] == 0) || (parenting_edge_index[node2] == 0)) {
         cut_size_e0 += weight;
     }
@@ -40,8 +40,8 @@ void Tree::UpdateDeltaCut(int node1, int node2, float weight) {
     UpdateDeltaCutHalfPath(node2, lca, weight);
 }
 
-std::pair<std::vector<int>, float> Tree::OneRespectedMincut() const {
-    float min_cut_size = INT32_MAX;
+std::pair<std::vector<int>, long> Tree::OneRespectedMincut() const {
+    long min_cut_size = INT32_MAX;
     int best_edge = 0;
     for (int i = 0; i < static_cast<int>(cut_values.size()); ++i) {
         if (cut_values[i] < min_cut_size) {
@@ -53,26 +53,31 @@ std::pair<std::vector<int>, float> Tree::OneRespectedMincut() const {
     return {SubtreeNodes(best_edge), min_cut_size};
 }
 
-std::pair<std::vector<int>, float> Tree::OneRespectedSparsestCut() const {
-    float min_value = INT32_MAX;
+std::tuple<std::vector<int>, long, int> Tree::OneRespectedSparsestCut() const {
+    long best_cut_size = INT64_MAX;
+    int best_denominator = 1;
     int best_edge = 0;
     for (int i = 0; i < static_cast<int>(cut_values.size()); ++i) {
-        const float this_sparsity = cut_values[i] / static_cast<float>(
-            std::min(subtree_sizes[ordered_edges[i]],
-            static_cast<int>(adj_list.size()) - subtree_sizes[ordered_edges[i]]));
-        if (this_sparsity < min_value) {
-            min_value = this_sparsity;
+        long this_cut_size = cut_values[i];
+        int this_denominator = std::min(subtree_sizes[ordered_edges[i]],
+                                        static_cast<int>(adj_list.size()) - subtree_sizes[ordered_edges[i]]);
+
+        if (static_cast<double>(this_cut_size) * static_cast<double>(best_denominator) < static_cast<double>(
+            best_cut_size) * static_cast<double>(this_denominator)) {   // compared fractions
+            best_cut_size = this_cut_size;
+            best_denominator = this_denominator;
             best_edge = ordered_edges[i];
         }
     }
 
-    return {SubtreeNodes(best_edge), min_value};
+    return {SubtreeNodes(best_edge), best_cut_size, best_denominator};
 }
 
-std::pair<std::vector<int>, float> Tree::OneRespectedBalancedCut(float ratio) const {
-    float min_cut_size = INT32_MAX;
+std::pair<std::vector<int>, long> Tree::OneRespectedBalancedCut(float ratio) const {
+    long min_cut_size = INT64_MAX;
     int best_edge = -1;
     for (int i = 0; i < static_cast<int>(cut_values.size()); ++i) {
+        // TODO make a cleaner comparison
         if ((static_cast<float>(subtree_sizes[ordered_edges[i]]) < static_cast<float>(adj_list.size()) * ratio) ||
             (static_cast<float>(adj_list.size()) - static_cast<float>(subtree_sizes[ordered_edges[i]]) <
                 static_cast<float>(adj_list.size()) * ratio)) {
@@ -87,7 +92,7 @@ std::pair<std::vector<int>, float> Tree::OneRespectedBalancedCut(float ratio) co
 
     if (best_edge == -1) {
         // no balanced cut
-        return {std::vector<int>(), INT32_MAX};
+        return {std::vector<int>(), INT64_MAX};
     }
     return {SubtreeNodes(best_edge), min_cut_size};
 }
@@ -101,9 +106,9 @@ void Tree::InitializeTreeStructure() {
     parent = std::vector<int>(adj_list.size());
     children = std::vector<std::vector<int> >(adj_list.size(), std::vector<int>());
     depth = std::vector<int>(adj_list.size(), 0);
-    delta_cut = std::vector<float>(adj_list.size() - 2, 0.);
-    cut_size_e0 = 0.;
-    cut_values = std::vector<float>(adj_list.size() - 1, 0.);
+    delta_cut = std::vector<long>(adj_list.size() - 2, 0.);
+    cut_size_e0 = 0;
+    cut_values = std::vector<long>(adj_list.size() - 1, 0.);
 
     std::vector<bool> visited(adj_list.size(), false);
     int num_visited = 0;
@@ -250,7 +255,7 @@ int Tree::LCA(int node1, int node2) const {
     return node2;
 }
 
-void Tree::UpdateDeltaCutHalfPath(int node, int lca, float weight) {
+void Tree::UpdateDeltaCutHalfPath(int node, int lca, int weight) {
     while (depth[node] > depth[lca]) {
         if (parenting_edge_index[node] - 1 >= 0) {
             delta_cut[parenting_edge_index[node] - 1] += weight;
@@ -317,7 +322,7 @@ bool Tree::IsAncestor(int node1, int node2) const {
     return LCA(node1, node2) == node1;
 }
 
-std::pair<std::vector<int>,std::vector<int>> Tree::SubtreesNodes(int vertex1, int vertex2) const {
+std::pair<std::vector<int>, std::vector<int> > Tree::SubtreesNodes(int vertex1, int vertex2) const {
     // returns a list of vertices in the subtree, including this vertex
     if (vertex1 == vertex2) {
         throw std::runtime_error("vertex1 == vertex2");
@@ -332,9 +337,7 @@ std::pair<std::vector<int>,std::vector<int>> Tree::SubtreesNodes(int vertex1, in
     }
 
     return std::make_pair(SubtreeNodes(vertex1), SubtreeNodes(vertex2));
-
 }
-
 
 int Tree::GetRoot() const {
     return root;

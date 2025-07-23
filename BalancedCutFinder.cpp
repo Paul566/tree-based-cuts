@@ -24,7 +24,7 @@ graph(graph), tree(tree), factor(factor) {
 void BalancedCutFinder::InitializeWeights() {
     std::set<int> seen;
 
-    int bound = n * factor / 2;
+    const int bound = static_cast<int>(n * factor / 2);
 
     for (int path : tree.path_indices) {
         if (path < 0 || seen.contains(path)) {
@@ -41,11 +41,11 @@ void BalancedCutFinder::InitializeWeights() {
         for (int t_edge_start = tree.parenting_edge_index[tree.path_lower_end[path]];
         t_edge_start <= tree.parenting_edge_index[tree.path_upper_end[path]]; t_edge_start++) {
             if (tree.subtree_sizes[tree.ordered_edges[t_edge_start]] >= bound) {
-                std::vector<float> path_weights;
+                std::vector<long> path_weights;
                 for (int t_edge = t_edge_start; t_edge <= tree.parenting_edge_index[tree.path_upper_end[path]]; t_edge++ ) {
                     int node1 = tree.ordered_edges[t_edge];
                     int node2 = tree.parent[node1];
-                    float t_weight = graph.weights.at({node1, node2});
+                    long t_weight = graph.weights.at({node1, node2});
                     path_weights.emplace_back(t_weight);
                 }
                 weights.insert({path, RangeQuery(path_weights)});
@@ -197,7 +197,7 @@ void BalancedCutFinder::AddOutPath(const Edge &edge, bool negative) {
     global_weight += weight;
 }
 
-void BalancedCutFinder::Update(int path, int l, int r, float weight) {
+void BalancedCutFinder::Update(int path, int l, int r, int weight) {
     if (!weights.contains(path)) {
         return;
     }
@@ -210,8 +210,8 @@ void BalancedCutFinder::Update(int path, int l, int r, float weight) {
 }
 
 
-float BalancedCutFinder::MinCutWithEdge(int edge) {
-    float res = INT32_MAX;
+long BalancedCutFinder::MinCutWithEdge(int edge) {
+    long res = INT64_MAX;
     int node = tree.ordered_edges[edge];
     int edge_subtree = tree.subtree_sizes[tree.ordered_edges[edge]];
     int lca_edge;
@@ -246,27 +246,27 @@ float BalancedCutFinder::MinCutWithEdge(int edge) {
 
 
     }
-    if (res == INT32_MAX) {
+    if (res == INT64_MAX) {
         //avoid overflow
-        return INT32_MAX;
+        return INT64_MAX;
     }
     return res + global_weight;
 }
 
-float BalancedCutFinder::MinOfPath(int path, int min_edge, int max_edge, int other_subtree,
+long BalancedCutFinder::MinOfPath(int path, int min_edge, int max_edge, int other_subtree,
     bool is_in_subtree, RangeQuery& query) {
     // n*factor <= other_subtree+x <= n-n*factor, x>=other_subtree
     int min_subtree = std::max(other_subtree, static_cast<int>(ceil(n*factor - other_subtree)));
     int max_subtree = n-n*factor - other_subtree;
     if (max_subtree < min_subtree) {
-        return INT32_MAX;
+        return INT64_MAX;
     }
     GetMinMaxEdge(min_edge, max_edge, min_subtree, max_subtree, is_in_subtree);
 
     if (min_edge <= max_edge) {
         return query.query_min(min_edge - paths_gaps[path], max_edge - paths_gaps[path]);
     }
-    return INT32_MAX;
+    return INT64_MAX;
 }
 
 int BinarySearch(const std::vector<int>& nums, int left, int right, int bound, bool upper) {
@@ -316,8 +316,8 @@ void BalancedCutFinder::GetMinMaxEdge(int &min_edge, int &max_edge, int min_subt
 
 }
 
-float BalancedCutFinder::TwoRespectedBalancedCut() {
-    float min_cut_size = INT32_MAX;
+long BalancedCutFinder::TwoRespectedBalancedCut() {
+    long min_cut_size = INT64_MAX;
     std::pair<int, int> best_edges = {-1, -1};
     for (int t_edge = 0; t_edge < static_cast<int>(tree.ordered_edges.size()); ++t_edge) {
         for (auto g_edge: tree_edge_to_path_in_edges[t_edge]) {
@@ -325,8 +325,8 @@ float BalancedCutFinder::TwoRespectedBalancedCut() {
             AddOutPath(g_edge, false);
 
         }
-        float min_curr_cut = MinCutWithEdge(t_edge);
-        if (min_curr_cut != INT32_MAX) {
+        long min_curr_cut = MinCutWithEdge(t_edge);
+        if (min_curr_cut != INT64_MAX) {
             int node1 = tree.ordered_edges[t_edge];
             int node2 = tree.parent[node1];
             min_curr_cut += graph.weights.at({node1, node2}); // weight of t_edge

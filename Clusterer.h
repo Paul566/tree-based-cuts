@@ -4,6 +4,7 @@
 
 #ifndef CLUSTERER_H
 #define CLUSTERER_H
+#include <unordered_set>
 #include <vector>
 #include "Graph.h"
 
@@ -14,8 +15,6 @@ class Clusterer {
         // min_samples nearest neighbors are used to compute the core densities and the nearest neighbor graph
 
         std::string finding_neighbors_method;
-        std::vector<float> core_distances;
-        Graph neighbor_graph;
 
         Clusterer(const std::vector<std::vector<float> > &_points, int _min_samples, const std::string &_finding_neighbors_method);
 
@@ -30,6 +29,21 @@ class Clusterer {
         static float WeightFunction(float distance);   // the weight of an edge is 1/distance
 
         float Distance(int point_index_1, int point_index_2) const;
+
+        int SparsestCutEdge() const;  // the node of the lower end of the sparsest cut edge
+
+        // void CutEdge(int edge); // makes a cut at a given edge, edge = its lower endpoint
+        //
+        // void UpdateSubtreeSizes(int cut_edge);
+        //
+        // void UpdateComponentSizes(int cut_edge);
+
+        // int RootOfComponent(int vertex);
+
+        std::vector<float> core_distances;
+        Graph neighbor_graph;
+        std::unordered_set<int> cut_tree_edges;
+        std::vector<int> component_sizes;   // each vertex remembers the size of its components
 };
 
 #endif //CLUSTERER_H

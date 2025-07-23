@@ -9,18 +9,18 @@
 
 class RangeQuery {
 public:
-    explicit RangeQuery(const std::vector<float>& nums);
-    void update(int l, int r, float addend);
-    float query_min(int l, int r);
+    explicit RangeQuery(const std::vector<long>& nums);
+    void update(int l, int r, long addend);
+    long query_min(int l, int r);
 
 private:
-    std::vector<float> t;
-    std::vector<float> lazy;
+    std::vector<long> t;
+    std::vector<long> lazy;
     int n;
-    void build(const std::vector<float>& nums, int v, int tl, int tr);
+    void build(const std::vector<long>& nums, int v, int tl, int tr);
     void push(int v);
-    void recursive_update(int v, int tl, int tr, int l, int r, float addend);
-    float recursive_query(int v, int tl, int tr, int l, int r);
+    void recursive_update(int v, int tl, int tr, int l, int r, long addend);
+    long recursive_query(int v, int tl, int tr, int l, int r);
 
 };
 

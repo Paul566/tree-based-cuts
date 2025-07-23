@@ -7,7 +7,7 @@
 #include <vector>
 #include "DisjointSets.h"
 
-Graph::Graph(const std::vector<std::vector<std::pair<int, float>> > &_adj_list, const std::string &_tree_init_type, int seed_for_tree) {
+Graph::Graph(const std::vector<std::vector<std::pair<int, int>> > &_adj_list, const std::string &_tree_init_type, int seed_for_tree) {
     if (_adj_list.size() <= 1) {
         throw std::runtime_error("Graph::Graph(): need at least two vertices");
     }
@@ -22,7 +22,7 @@ Graph::Graph(const std::vector<std::vector<std::pair<int, float>> > &_adj_list, 
 }
 
 Graph::Graph(const std::vector<std::vector<int>> &_adj_list, const std::string &_tree_init_type, int seed_for_tree) {
-    adj_list = std::vector<std::vector<std::pair<int, float>>>(_adj_list.size(), std::vector<std::pair<int, float>>());
+    adj_list = std::vector<std::vector<std::pair<int, int>>>(_adj_list.size(), std::vector<std::pair<int, int>>());
     for (int i = 0; i < static_cast<int>(_adj_list.size()); ++i) {
         adj_list[i].reserve(_adj_list[i].size());
         for (int neighbor : _adj_list[i]) {
@@ -44,25 +44,21 @@ void Graph::FillWeights() {
     }
 }
 
-std::pair<std::vector<int>, float> Graph::OneRespectedSparsestCut() {
+std::tuple<std::vector<int>, long, int> Graph::OneRespectedSparsestCut() const {
     return tree.OneRespectedSparsestCut();
 }
 
-std::pair<std::vector<int>, float> Graph::OneRespectedMincut() {
+std::pair<std::vector<int>, long> Graph::OneRespectedMincut() const {
     return tree.OneRespectedMincut();
 }
 
-std::pair<std::vector<int>, float> Graph::OneRespectedBalancedCut(float ratio) {
+std::pair<std::vector<int>, long> Graph::OneRespectedBalancedCut(const float ratio) const {
     return tree.OneRespectedBalancedCut(ratio);
 }
 
-float Graph::TwoRespectedMinCut() {
-    throw std::runtime_error("Not implemented");
-    return 0.;
-}
-
-std::pair<std::vector<int>, float> Graph::SlowOneRespectedSparsestCut() const {
-    float min_sparsity = INT32_MAX;
+std::tuple<std::vector<int>, long, int> Graph::SlowOneRespectedSparsestCut() const {
+    long best_cut_size = INT64_MAX;
+    int best_denominator = 1;
     std::vector<int> best_cut;
 
     for (int vertex = 0; vertex < static_cast<int>(adj_list.size()); ++vertex) {
@@ -70,21 +66,21 @@ std::pair<std::vector<int>, float> Graph::SlowOneRespectedSparsestCut() const {
             continue;
         }
 
-        float cut_size = SlowCutSize(tree.SubtreeNodes(vertex));
-        float part_size = static_cast<float>(tree.SubtreeNodes(vertex).size());
-        float this_sparsity = static_cast<float>(cut_size) / static_cast<float>(
-            std::min(part_size,static_cast<float>(adj_list.size()) - part_size));
-        if (this_sparsity < min_sparsity) {
-            min_sparsity = this_sparsity;
+        long this_cut_size = SlowCutSize(tree.SubtreeNodes(vertex));
+        int this_denominator = std::min(tree.SubtreeNodes(vertex).size(), static_cast<int>(adj_list.size()) - tree.SubtreeNodes(vertex).size());
+        if (static_cast<double>(this_cut_size) * static_cast<double>(best_denominator) < static_cast<double>(
+            best_cut_size) * static_cast<double>(this_denominator)) {
+            best_cut_size = this_cut_size;
+            best_denominator = this_denominator;
             best_cut = tree.SubtreeNodes(vertex);
         }
     }
 
-    return {best_cut, min_sparsity};
+    return {best_cut, best_cut_size, best_denominator};
 }
 
-std::pair<std::vector<int>, float> Graph::SlowOneRespectedMincut() const {
-    float min_cut_size = INT32_MAX;
+std::pair<std::vector<int>, long> Graph::SlowOneRespectedMincut() const {
+    long min_cut_size = INT32_MAX;
     std::vector<int> best_cut;
 
     for (int vertex = 0; vertex < static_cast<int>(adj_list.size()); ++vertex) {
@@ -92,7 +88,7 @@ std::pair<std::vector<int>, float> Graph::SlowOneRespectedMincut() const {
             continue;
         }
 
-        float cut_size = SlowCutSize(tree.SubtreeNodes(vertex));
+        long cut_size = SlowCutSize(tree.SubtreeNodes(vertex));
         if (cut_size < min_cut_size) {
             min_cut_size = cut_size;
             best_cut = tree.SubtreeNodes(vertex);
@@ -102,8 +98,8 @@ std::pair<std::vector<int>, float> Graph::SlowOneRespectedMincut() const {
     return {best_cut, min_cut_size};
 }
 
-std::pair<std::vector<int>, float> Graph::SlowOneRespectedBalancedCut(float ratio) const {
-    float min_cut_size = INT32_MAX;
+std::pair<std::vector<int>, long> Graph::SlowOneRespectedBalancedCut(float ratio) const {
+    long min_cut_size = INT64_MAX;
     std::vector<int> best_cut;
 
     for (int vertex = 0; vertex < static_cast<int>(adj_list.size()); ++vertex) {
@@ -111,11 +107,11 @@ std::pair<std::vector<int>, float> Graph::SlowOneRespectedBalancedCut(float rati
             continue;
         }
 
-        float cut_size = SlowCutSize(tree.SubtreeNodes(vertex));
-        float part_size = static_cast<float>(tree.SubtreeNodes(vertex).size());
+        long cut_size = SlowCutSize(tree.SubtreeNodes(vertex));
+        long part_size = static_cast<long>(tree.SubtreeNodes(vertex).size());
 
-        if ((part_size < static_cast<float>(adj_list.size()) * ratio) ||
-            (static_cast<float>(adj_list.size()) - part_size < static_cast<float>(adj_list.size()) * ratio)) {
+        if ((part_size < static_cast<long>(adj_list.size()) * ratio) ||
+            (static_cast<long>(adj_list.size()) - part_size < static_cast<long>(adj_list.size()) * ratio)) {
             continue;
             }
 
@@ -132,8 +128,8 @@ std::pair<std::vector<int>, float> Graph::SlowOneRespectedBalancedCut(float rati
     return {best_cut, min_cut_size};
 }
 
-std::pair<std::vector<int>, float> Graph::SlowTwoRespectedMinCut() const{
-    float min_cut_size = INT32_MAX;
+std::pair<std::vector<int>, long> Graph::SlowTwoRespectedMinCut() const{
+    long min_cut_size = INT32_MAX;
     std::vector<int> best_cut;
     int graph_size = static_cast<int>(adj_list.size());
 
@@ -151,7 +147,7 @@ std::pair<std::vector<int>, float> Graph::SlowTwoRespectedMinCut() const{
             auto cut = sub_trees.first;
             cut.insert(cut.end(), sub_trees.second.begin(), sub_trees.second.end());
 
-            float cut_size = SlowCutSize(cut);
+            long cut_size = SlowCutSize(cut);
 
             if (cut_size < min_cut_size) {
                 min_cut_size = cut_size;
@@ -167,8 +163,8 @@ std::pair<std::vector<int>, float> Graph::SlowTwoRespectedMinCut() const{
     return {best_cut, min_cut_size};
 }
 
-std::pair<std::vector<int>, float> Graph::SlowTwoRespectedBalancedCut(float ratio) const{
-    float min_cut_size = INT32_MAX;
+std::pair<std::vector<int>, long> Graph::SlowTwoRespectedBalancedCut(float ratio) const{
+    long min_cut_size = INT64_MAX;
     std::vector<int> best_cut;
     int graph_size = static_cast<int>(adj_list.size());
 
@@ -186,11 +182,11 @@ std::pair<std::vector<int>, float> Graph::SlowTwoRespectedBalancedCut(float rati
             auto cut = sub_trees.first;
             cut.insert(cut.end(), sub_trees.second.begin(), sub_trees.second.end());
 
-            float cut_size = SlowCutSize(cut);
-            float part_size = cut.size();
+            long cut_size = SlowCutSize(cut);
+            long part_size = cut.size();
 
-            if ((part_size < static_cast<float>(adj_list.size()) * ratio) ||
-                (static_cast<float>(adj_list.size()) - part_size < static_cast<float>(adj_list.size()) * ratio)) {
+            if ((part_size < static_cast<long>(adj_list.size()) * ratio) ||
+                (static_cast<long>(adj_list.size()) - part_size < static_cast<long>(adj_list.size()) * ratio)) {
                 continue;
                 }
 
@@ -245,7 +241,7 @@ void Graph::CalculateTree(std::string tree_init_type) {
     tree.UpdateCutValues();
 }
 
-void Graph::InitMST(std::vector<std::tuple<float, int, int> > weighted_edges) {
+void Graph::InitMST(std::vector<std::tuple<int, int, int> > weighted_edges) {
     std::sort(weighted_edges.begin(), weighted_edges.end());
 
     DisjointSets disjoint_sets(static_cast<int>(adj_list.size()));
@@ -262,8 +258,8 @@ void Graph::InitMST(std::vector<std::tuple<float, int, int> > weighted_edges) {
     tree = Tree(static_cast<int>(adj_list.size()), mst_edges);
 }
 
-std::vector<std::tuple<float, int, int> > Graph::RandomlyWeightedEdgeList() {
-    std::vector<std::tuple<float, int, int> > random_weighted_edges;
+std::vector<std::tuple<int, int, int> > Graph::RandomlyWeightedEdgeList() {
+    std::vector<std::tuple<int, int, int> > random_weighted_edges;
 
     for (int i = 0; i < adj_list.size(); ++i) {
         for (int j = 0; j < adj_list[i].size(); ++j) {
@@ -276,8 +272,8 @@ std::vector<std::tuple<float, int, int> > Graph::RandomlyWeightedEdgeList() {
     return random_weighted_edges;
 }
 
-std::vector<std::tuple<float, int, int>> Graph::NegativelyWeightedEdgeList() {
-    std::vector<std::tuple<float, int, int> > weighted_edges;
+std::vector<std::tuple<int, int, int>> Graph::NegativelyWeightedEdgeList() {
+    std::vector<std::tuple<int, int, int> > weighted_edges;
 
     for (int i = 0; i < adj_list.size(); ++i) {
         for (int j = 0; j < adj_list[i].size(); ++j) {
@@ -347,13 +343,13 @@ int Graph::RandomNeighbor(const int vertex) {
     return neighbors[dist(generator)].first;
 }
 
-float Graph::SlowCutSize(const std::vector<int>& cut) const {
+long Graph::SlowCutSize(const std::vector<int>& cut) const {
     std::unordered_set<int> cut_set;
     for (int vertex : cut) {
         cut_set.insert(vertex);
     }
 
-    float cut_size = 0;
+    long cut_size = 0;
     for (const int vertex : cut) {
         for (auto [neighbor, weight] : adj_list[vertex]) {
             if (!cut_set.contains(neighbor)) {

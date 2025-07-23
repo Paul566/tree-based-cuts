@@ -144,10 +144,10 @@ std::vector<std::vector<int> > RandomConnectedGraph(const int num_vertices,
     return adj_list;
 }
 
-std::vector<std::vector<std::pair<int, float>>> AddRandomWeights(std::vector<std::vector<int>> adj_list, float min_weight, float max_weight, std::mt19937 &generator) {
-    std::vector<std::vector<std::pair<int, float>>> weighted_adj_list(adj_list.size(), std::vector<std::pair<int, float>>());
+std::vector<std::vector<std::pair<int, int>>> AddRandomWeights(std::vector<std::vector<int>> adj_list, int min_weight, int max_weight, std::mt19937 &generator) {
+    std::vector<std::vector<std::pair<int, int>>> weighted_adj_list(adj_list.size(), std::vector<std::pair<int, int>>());
 
-    std::uniform_real_distribution<> dist_weights(min_weight, max_weight);
+    std::uniform_int_distribution<> dist_weights(min_weight, max_weight);
     for (int i = 0; i < static_cast<int>(adj_list.size()); ++i) {
         weighted_adj_list[i].reserve(adj_list[i].size());
         for (int neighbor : adj_list[i]) {
@@ -189,9 +189,8 @@ void RunRandomTests(int max_vertices,
                               int num_tests,
                               std::mt19937 &generator,
                               std::string tree_init_type,
-                              float min_weight,
-                              float max_weight,
-                              float tolerance=0.0001) {
+                              int min_weight,
+                              int max_weight) {
     std::uniform_int_distribution<> dist_vertices(2, max_vertices);
 
     for (int i = 0; i < num_tests; ++i) {
@@ -210,32 +209,32 @@ void RunRandomTests(int max_vertices,
         auto adj_list = AddRandomWeights(unweighted_adj_list, min_weight, max_weight, generator);
         Graph graph(adj_list, tree_init_type, 239);
 
-        auto [_sc, sparsest_cut_value] = graph.OneRespectedSparsestCut();
+        auto [_sc, sparsest_cut_size, denominator] = graph.OneRespectedSparsestCut();
         auto [_mc, min_cut_value] = graph.OneRespectedMincut();
         auto [_bc, balanced_cut_value] = graph.OneRespectedBalancedCut(sparsity);
-        auto [_ssc, slow_sparsest_cut_value] = graph.SlowOneRespectedSparsestCut();
+        auto [_ssc, slow_sparsest_cut_size, slow_denominator] = graph.SlowOneRespectedSparsestCut();
         auto [_smc, slow_min_cut_value] = graph.SlowOneRespectedMincut();
         auto [_sbc, slow_balanced_cut_value] = graph.SlowOneRespectedBalancedCut(sparsity);
 
         auto [trc, slow_two_respected_cut] = graph.SlowTwoRespectedBalancedCut(sparsity);
         BalancedCutFinder b(graph, graph.tree, sparsity);
-        float two_respected_cut = b.TwoRespectedBalancedCut();
+        long two_respected_cut = b.TwoRespectedBalancedCut();
 
-        if (std::abs(sparsest_cut_value - slow_sparsest_cut_value) > tolerance) {
+        if (sparsest_cut_size * slow_denominator != slow_sparsest_cut_size * denominator) {
             graph.PrintGraph();
             throw std::runtime_error("sparsest cut test failed");
         }
-        if (std::abs(min_cut_value - slow_min_cut_value) > tolerance) {
+        if (min_cut_value != slow_min_cut_value) {
             graph.PrintGraph();
             std::cout << min_cut_value << " vs " << slow_min_cut_value << std::endl;
             throw std::runtime_error("min cut test failed");
         }
-        if (std::abs(balanced_cut_value - slow_balanced_cut_value) > tolerance) {
+        if (balanced_cut_value != slow_balanced_cut_value) {
             graph.PrintGraph();
             std::cout << balanced_cut_value << " vs " << slow_balanced_cut_value << std::endl;
             throw std::runtime_error("balanced cut test failed");
         }
-        if (std::abs(two_respected_cut - slow_two_respected_cut) > tolerance) {
+        if (two_respected_cut != slow_two_respected_cut) {
             graph.PrintGraph();
             std::cout << two_respected_cut << " vs " << slow_two_respected_cut << std::endl;
             throw std::runtime_error("two balanced cut test failed");
@@ -311,7 +310,7 @@ void ExportGridCut(int size,
                    std::string init_tree_type) {
     auto adj_list = SquareGridGraph(size);
     Graph graph(adj_list, init_tree_type, seed);
-    auto [cut, value] = graph.OneRespectedSparsestCut();
+    auto [cut, cut_size, denominator] = graph.OneRespectedSparsestCut();
     std::unordered_set<int> cut_set;
     for (int element : cut) {
         cut_set.insert(element);
@@ -340,13 +339,13 @@ int main() {
     points.push_back(std::vector<float>({1.1, 1}));
     points.push_back(std::vector<float>({1, 1.1}));
 
-    Clusterer clusterer(points, 2, "kdtree");
-    auto labels = clusterer.ClusterLabels(2);
-    for (auto label : labels) {
-        std::cout << label << std::endl;
-    }
+    // Clusterer clusterer(points, 2, "kdtree");
+    // auto labels = clusterer.ClusterLabels(2);
+    // for (auto label : labels) {
+    //     std::cout << label << std::endl;
+    // }
 
-    RunRandomTests(100, 100000, generator, "random_mst", 0., 1., 0.01);
+    RunRandomTests(100, 100000, generator, "random_mst", 0, 10);
 
     // RunBalancedCutBenchmark((1. - 0.05) * 0.5, 10);
 
