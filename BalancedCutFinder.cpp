@@ -41,11 +41,11 @@ void BalancedCutFinder::InitializeWeights() {
         for (int t_edge_start = tree.parenting_edge_index[tree.path_lower_end[path]];
         t_edge_start <= tree.parenting_edge_index[tree.path_upper_end[path]]; t_edge_start++) {
             if (tree.subtree_sizes[tree.ordered_edges[t_edge_start]] >= bound) {
-                std::vector<long> path_weights;
+                std::vector<int64_t> path_weights;
                 for (int t_edge = t_edge_start; t_edge <= tree.parenting_edge_index[tree.path_upper_end[path]]; t_edge++ ) {
                     int node1 = tree.ordered_edges[t_edge];
                     int node2 = tree.parent[node1];
-                    long t_weight = graph.weights.at({node1, node2});
+                    int64_t t_weight = graph.weights.at({node1, node2});
                     path_weights.emplace_back(t_weight);
                 }
                 weights.insert({path, RangeQuery(path_weights)});
@@ -210,63 +210,73 @@ void BalancedCutFinder::Update(int path, int l, int r, int weight) {
 }
 
 
-long BalancedCutFinder::MinCutWithEdge(int edge) {
-    long res = INT64_MAX;
+std::pair<int64_t, PathChunck> BalancedCutFinder::MinCutWithEdge(int edge) {
+    std::pair<int64_t, PathChunck> res = {INT64_MAX, {-1, -1, -1}};
     int node = tree.ordered_edges[edge];
     int edge_subtree = tree.subtree_sizes[tree.ordered_edges[edge]];
     int lca_edge;
+    PathChunck path_chuck;
 
 
     for (auto [path, query] : weights) {
         int min_edge = tree.parenting_edge_index[tree.path_lower_end[path]];
         int max_edge = tree.parenting_edge_index[tree.path_upper_end[path]];
+        int lca_node_lower = tree.LCA(node, tree.path_lower_end[path]);
+        int lca_node_upper = tree.LCA(node, tree.path_upper_end[path]);
 
-        if (tree.LCA(node, tree.path_lower_end[path]) == node &&
-            tree.LCA(node, tree.path_upper_end[path]) == tree.path_upper_end[path]) {
+        if (lca_node_lower == node && lca_node_upper == tree.path_upper_end[path]) {
             // case 1: node is inside the path
-            res = std::min(res, MinOfPath(path, min_edge,
-                edge-1, n-edge_subtree, true, query));
-            res = std::min(res, MinOfPath(path, edge + 1,
-                max_edge, edge_subtree, false, query));
-        } else if (tree.LCA(node, tree.path_upper_end[path]) == node) {
+            path_chuck = {path, min_edge, edge-1};
+            res = std::min(res, MinOfPath(path_chuck, n-edge_subtree, true, query));
+            path_chuck = {path, edge + 1, max_edge};
+            res = std::min(res, MinOfPath(path_chuck, edge_subtree, false, query));
+        } else if (lca_node_upper == node) {
             //case 2: path is fully contained in subtree
-            res = std::min(res, MinOfPath(path, min_edge, max_edge, n-edge_subtree, true, query));
-        } else if (tree.LCA(node, tree.path_lower_end[path]) == tree.path_lower_end[path]) {
+            path_chuck = {path, min_edge, max_edge};
+            res = std::min(res, MinOfPath(path_chuck, n-edge_subtree, true, query));
+        } else if (lca_node_lower == tree.path_lower_end[path]) {
             // case 3: node is in the subtree of path
-            res = std::min(res, MinOfPath(path, min_edge, max_edge, edge_subtree, false, query));
-        } else if ((lca_edge = tree.parenting_edge_index[tree.LCA(node, tree.path_lower_end[path])]) <= max_edge &&
+            path_chuck = {path, min_edge, max_edge};
+            res = std::min(res, MinOfPath(path_chuck, edge_subtree, false, query));
+        } else if ((lca_edge = tree.parenting_edge_index[lca_node_lower]) <= max_edge &&
             lca_edge >= min_edge) {
             // case 4: node is descant of something inside the path
-            res = std::min(res, MinOfPath(path, min_edge, lca_edge - 1, edge_subtree, true, query));
-            res = std::min(res, MinOfPath(path, lca_edge, max_edge, edge_subtree, false, query));
+            path_chuck = {path, min_edge, lca_edge - 1};
+            res = std::min(res, MinOfPath(path_chuck, edge_subtree, true, query));
+            path_chuck = {path, lca_edge, max_edge};
+            res = std::min(res, MinOfPath(path_chuck, edge_subtree, false, query));
         } else {
             // case 5: none of the above
-            res = std::min(res, MinOfPath(path, min_edge, max_edge, edge_subtree, true, query));
+            path_chuck = {path, min_edge, max_edge};
+            res = std::min(res, MinOfPath(path_chuck, edge_subtree, true, query));
         }
 
 
     }
-    if (res == INT64_MAX) {
-        //avoid overflow
-        return INT64_MAX;
+    if (res.first == INT64_MAX) {
+        return res;
     }
-    return res + global_weight;
+    auto [best, best_path] = res;
+    return {best + global_weight, best_path};
 }
 
-long BalancedCutFinder::MinOfPath(int path, int min_edge, int max_edge, int other_subtree,
+std::pair<int64_t, PathChunck> BalancedCutFinder::MinOfPath(PathChunck path_chunck, int other_subtree,
     bool is_in_subtree, RangeQuery& query) {
+
+    auto [path, min_edge, max_edge] = path_chunck;
     // n*factor <= other_subtree+x <= n-n*factor, x>=other_subtree
     int min_subtree = std::max(other_subtree, static_cast<int>(ceil(n*factor - other_subtree)));
     int max_subtree = n-n*factor - other_subtree;
     if (max_subtree < min_subtree) {
-        return INT64_MAX;
+        return {INT64_MAX, {-1, -1, -1}};
     }
     GetMinMaxEdge(min_edge, max_edge, min_subtree, max_subtree, is_in_subtree);
 
     if (min_edge <= max_edge) {
-        return query.query_min(min_edge - paths_gaps[path], max_edge - paths_gaps[path]);
+        return {query.query_min(min_edge - paths_gaps[path], max_edge - paths_gaps[path]),
+            {path, min_edge, max_edge}};
     }
-    return INT64_MAX;
+    return {INT64_MAX, {-1, -1, -1}};
 }
 
 int BinarySearch(const std::vector<int>& nums, int left, int right, int bound, bool upper) {
@@ -316,21 +326,29 @@ void BalancedCutFinder::GetMinMaxEdge(int &min_edge, int &max_edge, int min_subt
 
 }
 
-long BalancedCutFinder::TwoRespectedBalancedCut() {
-    long min_cut_size = INT64_MAX;
-    std::pair<int, int> best_edges = {-1, -1};
+std::pair<std::vector<int>, int64_t> BalancedCutFinder::TwoRespectedBalancedCut() {
+    std::pair<int64_t, std::pair<int, int>> res = {INT64_MAX, {-1, -1}};
+
     for (int t_edge = 0; t_edge < static_cast<int>(tree.ordered_edges.size()); ++t_edge) {
         for (auto g_edge: tree_edge_to_path_in_edges[t_edge]) {
             AddPath(g_edge, true);
             AddOutPath(g_edge, false);
-
         }
-        long min_curr_cut = MinCutWithEdge(t_edge);
+
+        auto [min_curr_cut, path_chunk] = MinCutWithEdge(t_edge);
         if (min_curr_cut != INT64_MAX) {
+            int64_t array_val = min_curr_cut - global_weight;
             int node1 = tree.ordered_edges[t_edge];
             int node2 = tree.parent[node1];
             min_curr_cut += graph.weights.at({node1, node2}); // weight of t_edge
-            min_cut_size = std::min(min_cut_size, min_curr_cut);
+            if (min_curr_cut < res.first) {
+                res.first = min_curr_cut;
+                auto [path, min_edge, max_edge] = path_chunk;
+                int t_edge2 = weights.at(path).get_arg(min_edge - paths_gaps[path],
+                    max_edge - paths_gaps[path], array_val) + paths_gaps[path];
+                res.second = {t_edge, t_edge2};
+            }
+
         }
 
         for (auto g_edge: tree_edge_to_path_out_edges[t_edge]) {
@@ -339,5 +357,17 @@ long BalancedCutFinder::TwoRespectedBalancedCut() {
 
         }
     }
-    return  min_cut_size;
+
+    auto [cut_size, edges] = res;
+    auto [edge1, edge2] = edges;
+    if (edge1 == -1) {
+        assert(cut_size == INT64_MAX);
+        return {{}, INT64_MAX};
+    }
+    int node1 = tree.ordered_edges[edge1];
+    int node2 = tree.ordered_edges[edge2];
+    auto sub_trees = tree.SubtreesNodes(node1, node2);
+    auto cut = sub_trees.first;
+    cut.insert(cut.end(), sub_trees.second.begin(), sub_trees.second.end());
+    return  {cut, cut_size};
 }

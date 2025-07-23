@@ -25,22 +25,22 @@ class Graph {
 
         Graph() {};
 
-        std::tuple<std::vector<int>, long, int> OneRespectedSparsestCut() const;
+        std::tuple<std::vector<int>, int64_t, int> OneRespectedSparsestCut() const;
         // returns (list of vertices in a cut, sparsity of the cut)
 
-        std::pair<std::vector<int>, long> OneRespectedMincut() const;
+        std::pair<std::vector<int>, int64_t> OneRespectedMincut() const;
         // returns (list of vertices in a cut, value of the cut)
 
-        std::pair<std::vector<int>, long> OneRespectedBalancedCut(float ratio) const;
+        std::pair<std::vector<int>, int64_t> OneRespectedBalancedCut(float ratio) const;
         // returns (list of vertices in a cut, value of the cut)
 
         // for testing purposes:
-        std::tuple<std::vector<int>, long, int> SlowOneRespectedSparsestCut() const;
-        std::pair<std::vector<int>, long> SlowOneRespectedMincut() const;
-        std::pair<std::vector<int>, long> SlowOneRespectedBalancedCut(float ratio) const;
+        std::tuple<std::vector<int>, int64_t, int> SlowOneRespectedSparsestCut() const;
+        std::pair<std::vector<int>, int64_t> SlowOneRespectedMincut() const;
+        std::pair<std::vector<int>, int64_t> SlowOneRespectedBalancedCut(float ratio) const;
 
-        std::pair<std::vector<int>, long> SlowTwoRespectedMinCut() const;
-        std::pair<std::vector<int>, long> SlowTwoRespectedBalancedCut(float ratio) const;
+        std::pair<std::vector<int>, int64_t> SlowTwoRespectedMinCut() const;
+        std::pair<std::vector<int>, int64_t> SlowTwoRespectedBalancedCut(float ratio) const;
 
         void CalculateTree(std::string tree_init_type);
 
@@ -60,7 +60,7 @@ class Graph {
 
         int RandomNeighbor(int vertex);
 
-        long SlowCutSize(const std::vector<int>& cut) const;
+        int64_t SlowCutSize(const std::vector<int>& cut) const;
         // returns the size of the cut, the cut is a list of vertices
 };
 

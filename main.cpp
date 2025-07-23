@@ -94,7 +94,7 @@ std::vector<std::vector<int> > RandomGraph(const int num_vertices,
                                            std::mt19937 &generator) {
     std::vector<std::vector<int> > adj_list(num_vertices, std::vector<int>());
 
-    if (static_cast<long>(num_edges) > static_cast<long>(num_vertices) * static_cast<long>(num_vertices - 1) / 2) {
+    if (static_cast<int64_t>(num_edges) > static_cast<int64_t>(num_vertices) * static_cast<int64_t>(num_vertices - 1) / 2) {
         throw std::runtime_error("In RandomGraph: too many edges");
     }
 
@@ -216,9 +216,9 @@ void RunRandomTests(int max_vertices,
         auto [_smc, slow_min_cut_value] = graph.SlowOneRespectedMincut();
         auto [_sbc, slow_balanced_cut_value] = graph.SlowOneRespectedBalancedCut(sparsity);
 
-        auto [trc, slow_two_respected_cut] = graph.SlowTwoRespectedBalancedCut(sparsity);
+        auto [_strc, slow_two_respected_cut] = graph.SlowTwoRespectedBalancedCut(sparsity);
         BalancedCutFinder b(graph, graph.tree, sparsity);
-        long two_respected_cut = b.TwoRespectedBalancedCut();
+        auto [_trc, two_respected_cut] = b.TwoRespectedBalancedCut();
 
         if (sparsest_cut_size * slow_denominator != slow_sparsest_cut_size * denominator) {
             graph.PrintGraph();
