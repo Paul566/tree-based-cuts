@@ -25,16 +25,17 @@ Clusterer::Clusterer(const std::vector<std::vector<float> > &_points,
 }
 
 std::vector<int> Clusterer::ClusterLabels(const int num_clusters) {
-    if (num_clusters != 2) {
-        throw std::runtime_error("In Clusterer: not implemented num_clusters != 2");
+    if (num_clusters < 1) {
+        throw std::runtime_error("num_clusters must be at least 1");
     }
 
-    std::vector<int> labels(points.size(), 0);
-    auto [cut, cut_size, denominator] = neighbor_graph.OneRespectedSparsestCut();
-    for (int index : cut) {
-        labels[index] = 1;
+    if (!cut_tree_edges.empty()) {
+        throw std::runtime_error("In ClusterLabels: the tree has already been partitioned");
     }
-    return labels;
+
+    MakeKCuts(num_clusters - 1);
+
+    return ComponentLabels();
 }
 
 bool Clusterer::DimensionConsistencyCheck() const {
@@ -117,6 +118,13 @@ void Clusterer::InitializeNeighborGraph(int max_integer_weight) {
     neighbor_graph = Graph(adj_list_for_graph, "maximum_spanning_tree");
 }
 
+void Clusterer::MakeKCuts(const int num_cuts) {
+    for (int i = 0; i < num_cuts; ++i) {
+        const int next_edge = SparsestCutEdge();
+        CutEdge(next_edge);
+    }
+}
+
 float Clusterer::WeightFunction(const float distance) {
     return 1. / distance;
 }
@@ -159,10 +167,10 @@ void Clusterer::CutEdge(const int edge) {
 }
 
 void Clusterer::UpdateSubtreeSizes(int cut_edge) {
-    int local_root = RootOfComponent(cut_edge);
     int subtree_size = neighbor_graph.tree.subtree_sizes[cut_edge];
 
     int cur_vertex = neighbor_graph.tree.parent[cut_edge];
+    int local_root = RootOfComponent(cur_vertex);
     while (cur_vertex != local_root) {
         neighbor_graph.tree.subtree_sizes[cur_vertex] -= subtree_size;
         cur_vertex = neighbor_graph.tree.parent[cur_vertex];
@@ -208,4 +216,29 @@ int Clusterer::RootOfComponent(const int vertex) const {
         cur_vertex = neighbor_graph.tree.parent[cur_vertex];
     }
     return cur_vertex;
+}
+
+std::vector<int> Clusterer::ComponentLabels() {
+    std::vector<int> labels(points.size(), 0);
+    int component_counter = 0;
+
+    std::queue<int> queue;
+    queue.push(neighbor_graph.tree.root);
+    while (!queue.empty()) {
+        int cur_vertex = queue.front();
+        queue.pop();
+
+        for (int child : neighbor_graph.tree.children[cur_vertex]) {
+            queue.push(child);
+
+            if (!cut_tree_edges.contains(child)) {
+                labels[child] = labels[cur_vertex];
+            } else {
+                ++component_counter;
+                labels[child] = component_counter;
+            }
+        }
+    }
+
+    return labels;
 }
