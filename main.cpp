@@ -339,9 +339,11 @@ int main() {
     points.push_back(std::vector<float>({1.1, 1}));
     points.push_back(std::vector<float>({1, 1.1}));
     points.push_back(std::vector<float>({0.5, 0.5}));
+    points.push_back(std::vector<float>({0.6, 0.6}));
+    points.push_back(std::vector<float>({0.6, 0.5}));
 
-    Clusterer clusterer(points, 3, "kdtree");
-    auto labels = clusterer.ClusterLabels(2);
+    Clusterer clusterer(points, 2, "kdtree");
+    auto labels = clusterer.ClusterLabels(3);
     for (auto label : labels) {
         std::cout << label << std::endl;
     }

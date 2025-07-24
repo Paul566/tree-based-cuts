@@ -26,6 +26,8 @@ class Clusterer {
         void InitializeNeighborGraph(int max_integer_weight = 1'000'000'000);
         // TODO add brute force nearest neighbors also, in case of high dimension
 
+        void MakeKCuts(int num_cuts);
+
         static float WeightFunction(float distance);   // the weight of an edge is 1/distance
 
         float Distance(int point_index_1, int point_index_2) const;
@@ -39,6 +41,9 @@ class Clusterer {
         void UpdateComponentSizes(int cut_edge);
 
         int RootOfComponent(int vertex) const;
+
+        std::vector<int> ComponentLabels();
+        // returns a vector of labels for the components of the tree separated by the edges in cut_tree_edges set
 
         std::vector<float> core_distances;
         Graph neighbor_graph;
