@@ -18,6 +18,9 @@ Clusterer::Clusterer(const std::vector<std::vector<float> > &_points,
     if (!DimensionConsistencyCheck()) {
         throw std::runtime_error("In Clusterer: Dimensions of all the points mush be the same");
     }
+    if (min_samples > static_cast<int>(_points.size())) {
+        throw std::runtime_error("In Clusterer: min_samples is greater than the number of points");
+    }
 
     InitializeNeighborGraph();
 
@@ -53,7 +56,7 @@ bool Clusterer::DimensionConsistencyCheck() const {
 }
 
 void Clusterer::InitializeNeighborGraph(int max_integer_weight) {
-    auto kdtree = KDTree(points);
+    auto neighbors_list = GetNearestNeighbors();
     core_distances = std::vector<float>(points.size(), 0.);
 
     std::vector<std::vector<std::pair<int, float> > > adj_list = std::vector<std::vector<std::pair<int, float> > >(
@@ -61,9 +64,8 @@ void Clusterer::InitializeNeighborGraph(int max_integer_weight) {
         std::vector<std::pair<int, float> >());
 
     for (int i = 0; i < static_cast<int>(points.size()); ++i) {
-        auto neighbors = kdtree.nearest_indices(points[i], min_samples);
         float max_distance = 0.;
-        for (int neighbor : neighbors) {
+        for (int neighbor : neighbors_list[i]) {
             if (neighbor == i) {
                 continue;
             }
@@ -74,7 +76,7 @@ void Clusterer::InitializeNeighborGraph(int max_integer_weight) {
             // so far use distances as weights, correct wrt mutual reachability distance in the next loop
             bool i_in_neighbor_list = false;
             // check if adj_list[neighbor] already contains i
-            // TODO this leads to O(m * maxdeg^2) time, maybe change that
+            // TODO this is O(m * maxdeg^2) time, change this
             for (auto [node, dist] : adj_list[neighbor]) {
                 if (node == i) {
                     i_in_neighbor_list = true;
@@ -118,6 +120,55 @@ void Clusterer::InitializeNeighborGraph(int max_integer_weight) {
     neighbor_graph = Graph(adj_list_for_graph, "maximum_spanning_tree");
 }
 
+std::vector<std::vector<int>> Clusterer::GetNearestNeighbors() {
+    if (finding_neighbors_method == "kdtree") {
+        return GetNearestNeighborsKDT();
+    }
+    if (finding_neighbors_method == "brute_force") {
+        return GetNearestNeighborsBrute();
+    }
+    throw std::runtime_error("Unsupported finding_neighbors_method: " + finding_neighbors_method);
+}
+
+std::vector<std::vector<int>> Clusterer::GetNearestNeighborsKDT() {
+    auto kdtree = KDTree(points);
+    std::vector<std::vector<int>> adj_list(points.size(), std::vector<int>());
+    for (int i = 0; i < static_cast<int>(points.size()); ++i) {
+        auto neighbors = kdtree.nearest_indices(points[i], min_samples);
+        adj_list[i].reserve(min_samples);
+        for (int neighbor : neighbors) {
+            adj_list[i].push_back(neighbor);
+        }
+    }
+
+    return adj_list;
+}
+
+std::vector<std::vector<int>> Clusterer::GetNearestNeighborsBrute() {
+    std::vector<std::vector<int>> adj_list(points.size(), std::vector<int>());
+    for (int i = 0; i < static_cast<int>(points.size()); ++i) {
+        adj_list[i] = KNearestNeighborsBrute(i, min_samples);
+    }
+    return adj_list;
+}
+
+std::vector<int> Clusterer::KNearestNeighborsBrute(int point_index, int num_neighbors) {
+    // TODO this is O(n log(n)), can make it O(n) with quick select
+    std::vector<std::pair<float, int>> dist_to_points;
+    for (int i = 0; i < static_cast<int>(points.size()); ++i) {
+        dist_to_points.emplace_back(Distance(point_index, i), i);
+    }
+    std::sort(dist_to_points.begin(), dist_to_points.end());
+
+    std::vector<int> neighbors;
+    neighbors.reserve(num_neighbors);
+    for (int i = 0; i < num_neighbors; ++i) {
+        neighbors.push_back(dist_to_points[i].second);
+    }
+
+    return neighbors;
+}
+
 void Clusterer::MakeKCuts(const int num_cuts) {
     for (int i = 0; i < num_cuts; ++i) {
         const int next_edge = SparsestCutEdge();
@@ -139,6 +190,8 @@ float Clusterer::Distance(const int point_index_1, const int point_index_2) cons
 }
 
 int Clusterer::SparsestCutEdge() const {
+    std::cout << "\n\nfinding edge...\n";
+
     long best_cut_size = INT64_MAX;
     int best_denominator = 1;
     int best_edge = 0;
@@ -152,6 +205,7 @@ int Clusterer::SparsestCutEdge() const {
             static_cast<double>(best_cut_size) * static_cast<double>(this_denominator)) &&
             (!cut_tree_edges.contains(neighbor_graph.tree.ordered_edges[i]))) {
             if (this_denominator > best_denominator) {
+                std::cout << this_cut_size << " " << this_denominator << std::endl;
                 // handles the case of disconnected graphs, we need the most balanced 0-cut then
                 best_cut_size = this_cut_size;
                 best_denominator = this_denominator;

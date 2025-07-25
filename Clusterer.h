@@ -24,7 +24,15 @@ class Clusterer {
         bool DimensionConsistencyCheck() const; // checks that all the points have the same dimension
 
         void InitializeNeighborGraph(int max_integer_weight = 1'000'000'000);
-        // TODO add brute force nearest neighbors also, in case of high dimension
+        // TODO add approximate nearest neighbors search
+
+        std::vector<std::vector<int>> GetNearestNeighbors();
+
+        std::vector<std::vector<int>> GetNearestNeighborsKDT();
+        std::vector<std::vector<int>> GetNearestNeighborsBrute();
+        // list of min_samples nearest neighbors for each point, including self
+
+        std::vector<int> KNearestNeighborsBrute(int point_index, int num_neighbors);
 
         void MakeKCuts(int num_cuts);
 
