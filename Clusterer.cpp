@@ -148,12 +148,15 @@ int Clusterer::SparsestCutEdge() const {
         int this_denominator = std::min(neighbor_graph.tree.subtree_sizes[this_edge],
                                         component_sizes[this_edge] - neighbor_graph.tree.subtree_sizes[this_edge]);
 
-        if ((static_cast<double>(this_cut_size) * static_cast<double>(best_denominator) <
+        if ((static_cast<double>(this_cut_size) * static_cast<double>(best_denominator) <=
             static_cast<double>(best_cut_size) * static_cast<double>(this_denominator)) &&
             (!cut_tree_edges.contains(neighbor_graph.tree.ordered_edges[i]))) {
-            best_cut_size = this_cut_size;
-            best_denominator = this_denominator;
-            best_edge = this_edge;
+            if (this_denominator > best_denominator) {
+                // handles the case of disconnected graphs, we need the most balanced 0-cut then
+                best_cut_size = this_cut_size;
+                best_denominator = this_denominator;
+                best_edge = this_edge;
+            }
             }
     }
 

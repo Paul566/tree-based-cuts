@@ -216,6 +216,19 @@ void Graph::PrintGraph() const {
     }
 }
 
+std::vector<std::pair<int, int>> Graph::GetEdgeList() {
+    std::vector<std::pair<int, int>> edges;
+    edges.reserve(static_cast<int>(adj_list.size()));
+    for (int i = 0; i < static_cast<int>(adj_list.size()); ++i) {
+        for (auto [neighbor, weight] : adj_list[i]) {
+            if (neighbor > i) {
+                edges.push_back(std::make_pair(i, neighbor));
+            }
+        }
+    }
+    return edges;
+}
+
 void Graph::CalculateTree(std::string tree_init_type) {
     if (tree_init_type == "maximum_spanning_tree") {
         InitMST(NegativelyWeightedEdgeList());

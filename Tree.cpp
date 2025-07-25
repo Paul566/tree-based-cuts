@@ -62,11 +62,14 @@ std::tuple<std::vector<int>, int64_t, int> Tree::OneRespectedSparsestCut() const
         int this_denominator = std::min(subtree_sizes[ordered_edges[i]],
                                         static_cast<int>(adj_list.size()) - subtree_sizes[ordered_edges[i]]);
 
-        if (static_cast<double>(this_cut_size) * static_cast<double>(best_denominator) < static_cast<double>(
+        if (static_cast<double>(this_cut_size) * static_cast<double>(best_denominator) <= static_cast<double>(
             best_cut_size) * static_cast<double>(this_denominator)) {   // compared fractions
-            best_cut_size = this_cut_size;
-            best_denominator = this_denominator;
-            best_edge = ordered_edges[i];
+            if (this_denominator > best_denominator) {
+                // handles the case of disconnected graphs, we need the most balanced 0-cut then
+                best_cut_size = this_cut_size;
+                best_denominator = this_denominator;
+                best_edge = ordered_edges[i];
+            }
         }
     }
 
@@ -345,4 +348,17 @@ int Tree::GetRoot() const {
 
 std::vector<int> Tree::GetDepths() const {
     return depth;
+}
+
+std::vector<std::pair<int, int>> Tree::GetEdgeList() const {
+    std::vector<std::pair<int, int>> edges;
+    edges.reserve(static_cast<int>(adj_list.size()));
+    for (int i = 0; i < static_cast<int>(adj_list.size()); ++i) {
+        for (int neighbor : adj_list[i]) {
+            if (neighbor > i) {
+                edges.push_back(std::make_pair(i, neighbor));
+            }
+        }
+    }
+    return edges;
 }

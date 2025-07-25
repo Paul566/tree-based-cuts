@@ -46,6 +46,34 @@ std::vector<std::vector<int> > ReadGraph(const std::string &path) {
     return adj_list;
 }
 
+std::vector<std::vector<float>> ReadPointsFromCSV(const std::string& filename) {
+    std::vector<std::vector<float>> points;
+    std::ifstream file(filename);
+
+    if (!file.is_open()) {
+        throw std::runtime_error("input file " + filename + " not found");
+    }
+
+    std::string line;
+    while (std::getline(file, line)) {
+        std::vector<float> row;
+        std::stringstream line_stream(line);
+        std::string cell;
+
+        while (std::getline(line_stream, cell, ',')) {
+            row.push_back(std::stof(cell));
+        }
+
+        if (!row.empty()) {
+            points.push_back(row);
+        }
+    }
+
+    file.close();
+
+    return points;
+}
+
 template<typename T>
 void ExportVector(const std::string &path, const std::vector<T> &vector) {
     std::ofstream output(path);
@@ -331,43 +359,16 @@ int main() {
     // std::mt19937 generator(rd());
     std::mt19937 generator(239);
 
-    std::vector<std::vector<float> > points;
-    points.push_back(std::vector<float>({0, 0}));
-    points.push_back(std::vector<float>({0.1, 0}));
-    points.push_back(std::vector<float>({0, 0.1}));
-    points.push_back(std::vector<float>({1, 1}));
-    points.push_back(std::vector<float>({1.1, 1}));
-    points.push_back(std::vector<float>({1, 1.1}));
-    points.push_back(std::vector<float>({0.5, 0.5}));
-    points.push_back(std::vector<float>({0.6, 0.6}));
-    points.push_back(std::vector<float>({0.6, 0.5}));
+    auto points = ReadPointsFromCSV("../clustering/points.csv");
 
-    Clusterer clusterer(points, 2, "kdtree");
-    auto labels = clusterer.ClusterLabels(3);
+    Clusterer clusterer(points, 5, "kdtree");
+    auto labels = clusterer.ClusterLabels(2);
+    ExportVector("../clustering/labels", labels);
     for (auto label : labels) {
         std::cout << label << std::endl;
     }
 
     // RunRandomTests(100, 100000, generator, "random_mst", 0, 10);
-
-    // RunBalancedCutBenchmark((1. - 0.05) * 0.5, 10);
-
-    // std::vector<float> sparsities;
-    // for (int size = 10; size <= 1000; size += 1) {
-    //     std::cout << size << std::endl;
-    //     auto adj_list = SquareGridGraph(size);
-    //     Graph graph(adj_list, "random_spanning_tree", 239);
-    //     // Graph graph(adj_list, "random_mst", 239566);
-    //     auto [cut, value] = graph.OneRespectedSparsestCut();
-    //     sparsities.push_back(value);
-    // }
-    // ExportVector("../output/grid_sparsities", sparsities);
-
-    // ExportGridCut(512,
-    //               "../output/grid512_cut_randtree",
-    //               "../output/grid512_depth_randtree",
-    //               239,
-    //               "random_spanning_tree");
 
     return 0;
 }

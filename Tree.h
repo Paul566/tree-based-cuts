@@ -34,6 +34,8 @@ class Tree {
 
         std::vector<int> GetDepths() const;
 
+        std::vector<std::pair<int, int>> GetEdgeList() const;
+
     private:
         int root;
         std::vector<std::vector<int>> adj_list;

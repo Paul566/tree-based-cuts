@@ -209,7 +209,6 @@ void BalancedCutFinder::Update(int path, int l, int r, int weight) {
 
 }
 
-
 std::pair<int64_t, PathChunck> BalancedCutFinder::MinCutWithEdge(int edge) {
     std::pair<int64_t, PathChunck> res = {INT64_MAX, {-1, -1, -1}};
     int node = tree.ordered_edges[edge];

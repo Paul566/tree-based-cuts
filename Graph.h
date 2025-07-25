@@ -46,6 +46,8 @@ class Graph {
 
         void PrintGraph() const;
 
+        std::vector<std::pair<int, int>> GetEdgeList();
+
     private:
         std::mt19937 generator;
 
