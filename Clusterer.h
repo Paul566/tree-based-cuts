@@ -15,6 +15,7 @@ class Clusterer {
         // min_samples nearest neighbors are used to compute the core densities and the nearest neighbor graph
 
         std::string finding_neighbors_method;
+        Graph neighbor_graph;
 
         Clusterer(const std::vector<std::vector<float> > &_points, int _min_samples, const std::string &_finding_neighbors_method);
 
@@ -34,7 +35,7 @@ class Clusterer {
 
         std::vector<int> KNearestNeighborsBrute(int point_index, int num_neighbors);
 
-        void MakeKCuts(int num_cuts);
+        void MakeKCuts(int num_cuts); // TODO subtract the cut edges
 
         static float WeightFunction(float distance);   // the weight of an edge is 1/distance
 
@@ -54,7 +55,6 @@ class Clusterer {
         // returns a vector of labels for the components of the tree separated by the edges in cut_tree_edges set
 
         std::vector<float> core_distances;
-        Graph neighbor_graph;
         std::unordered_set<int> cut_tree_edges;
         std::vector<int> component_sizes;   // each vertex remembers the size of its components
 };

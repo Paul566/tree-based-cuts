@@ -190,8 +190,6 @@ float Clusterer::Distance(const int point_index_1, const int point_index_2) cons
 }
 
 int Clusterer::SparsestCutEdge() const {
-    std::cout << "\n\nfinding edge...\n";
-
     long best_cut_size = INT64_MAX;
     int best_denominator = 1;
     int best_edge = 0;
@@ -201,11 +199,10 @@ int Clusterer::SparsestCutEdge() const {
         int this_denominator = std::min(neighbor_graph.tree.subtree_sizes[this_edge],
                                         component_sizes[this_edge] - neighbor_graph.tree.subtree_sizes[this_edge]);
 
-        if ((static_cast<double>(this_cut_size) * static_cast<double>(best_denominator) <=
-            static_cast<double>(best_cut_size) * static_cast<double>(this_denominator)) &&
-            (!cut_tree_edges.contains(neighbor_graph.tree.ordered_edges[i]))) {
-            if (this_denominator > best_denominator) {
-                std::cout << this_cut_size << " " << this_denominator << std::endl;
+        if (((static_cast<double>(this_cut_size) * static_cast<double>(best_denominator) <
+            static_cast<double>(best_cut_size) * static_cast<double>(this_denominator))) ||
+            ((this_cut_size * best_denominator == best_cut_size * this_denominator) && (this_denominator > best_denominator))) {
+            if (!cut_tree_edges.contains(neighbor_graph.tree.ordered_edges[i])) {
                 // handles the case of disconnected graphs, we need the most balanced 0-cut then
                 best_cut_size = this_cut_size;
                 best_denominator = this_denominator;
@@ -218,6 +215,7 @@ int Clusterer::SparsestCutEdge() const {
 }
 
 void Clusterer::CutEdge(const int edge) {
+    // TODO subtract the cut edges
     cut_tree_edges.insert(edge);
     UpdateSubtreeSizes(edge);
     UpdateComponentSizes(edge);
